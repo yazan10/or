@@ -1,0 +1,6 @@
+{
+  "name": "ORVEX AI",
+  "description": "منصة تحليل التسويق الاجتماعي بالذكاء الاصطناعي وخطة محتوى 30 يوماً لـ Instagram وFacebook | Marketing Intelligence & Content Planner",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
