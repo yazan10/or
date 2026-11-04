@@ -137,12 +137,9 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Disclaimer */}
+        {/* Bottom — Platform rights only */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6C6A64]">
           <p>{t.footer.rights}</p>
-          <p className="max-w-xl text-center sm:text-left rtl:sm:text-right text-[11px] leading-relaxed">
-            {t.footer.disclaimer}
-          </p>
         </div>
       </div>
     </footer>
