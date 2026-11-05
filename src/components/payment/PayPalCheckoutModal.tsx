@@ -15,6 +15,7 @@ import {
   Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { safeFetchJson } from '../../utils/safeFetch';
 
 interface PayPalCheckoutModalProps {
   isOpen: boolean;
@@ -54,15 +55,14 @@ export const PayPalCheckoutModal: React.FC<PayPalCheckoutModalProps> = ({
     setErrorMsg(null);
     setSuccessReceipt(null);
 
-    fetch('/api/paypal/create-order', {
+    safeFetchJson('/api/paypal/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, platform }),
     })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setErrorMsg(data.error);
+      .then(({ ok, data, error }) => {
+        if (!ok || !data || data.error) {
+          setErrorMsg(error || data?.error || 'Failed to initialize order');
         } else {
           setOrderData(data);
         }
@@ -126,7 +126,7 @@ export const PayPalCheckoutModal: React.FC<PayPalCheckoutModalProps> = ({
     setIsProcessing(true);
 
     try {
-      const res = await fetch('/api/paypal/pay-with-card', {
+      const { ok, data, error } = await safeFetchJson('/api/paypal/pay-with-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,9 +140,8 @@ export const PayPalCheckoutModal: React.FC<PayPalCheckoutModalProps> = ({
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Card payment authorization failed');
+      if (!ok || !data || data.error) {
+        throw new Error(error || data?.error || 'Card payment authorization failed');
       }
 
       await refreshBalances();
@@ -170,7 +169,7 @@ export const PayPalCheckoutModal: React.FC<PayPalCheckoutModalProps> = ({
     setIsProcessing(true);
 
     try {
-      const res = await fetch('/api/paypal/capture-order', {
+      const { ok, data, error } = await safeFetchJson('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -182,9 +181,8 @@ export const PayPalCheckoutModal: React.FC<PayPalCheckoutModalProps> = ({
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'PayPal capture failed');
+      if (!ok || !data || data.error) {
+        throw new Error(error || data?.error || 'PayPal capture failed');
       }
 
       await refreshBalances();

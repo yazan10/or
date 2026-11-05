@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, WalletBalances, Language, SocialPlatform, SocialAccount, AnalysisReport, ContentPlan } from '../types';
 import { translations } from '../i18n/translations';
+import { safeFetchJson } from '../utils/safeFetch';
 
 interface ToastNotification {
   id: string;
@@ -150,9 +151,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchProfile = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/user/profile?userId=${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await safeFetchJson(`/api/user/profile?userId=${user.id}`);
+      if (ok && data) {
         setUser(data.user);
         if (data.wallet) setWallet(data.wallet);
       }
@@ -164,10 +164,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchAccounts = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/social/accounts?userId=${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAccounts(data.accounts);
+      const { ok, data } = await safeFetchJson(`/api/social/accounts?userId=${user.id}`);
+      if (ok && data) {
+        setAccounts(data.accounts || []);
       }
     } catch (e) {
       console.warn('fetchAccounts fallback:', e);
@@ -177,11 +176,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchReports = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/analysis/reports?userId=${user.id}&lang=${lang}`);
-      if (res.ok) {
-        const data = await res.json();
-        setReports(data.reports);
-        if (data.reports.length > 0 && !activeReport) {
+      const { ok, data } = await safeFetchJson(`/api/analysis/reports?userId=${user.id}&lang=${lang}`);
+      if (ok && data) {
+        setReports(data.reports || []);
+        if (data.reports?.length > 0 && !activeReport) {
           loadReportDetails(data.reports[0].id);
         }
       }
@@ -192,9 +190,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loadReportDetails = async (id: string) => {
     try {
-      const res = await fetch(`/api/analysis/reports/${id}?lang=${lang}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await safeFetchJson(`/api/analysis/reports/${id}?lang=${lang}`);
+      if (ok && data) {
         setActiveReport(data.report);
         setActivePlan(data.plan);
         setSelectedReportId(id);
@@ -207,9 +204,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshBalances = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/wallet/balances?userId=${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await safeFetchJson(`/api/wallet/balances?userId=${user.id}`);
+      if (ok && data && data.wallet) {
         setWallet(data.wallet);
       }
     } catch (e) {
@@ -220,14 +216,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const connectAccount = async (platform: SocialPlatform, accountName: string, username: string): Promise<boolean> => {
     if (!user) return false;
     try {
-      const res = await fetch('/api/social/connect', {
+      const { ok, data, error } = await safeFetchJson('/api/social/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, platform, accountName, username }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        showToast(data.error || 'Failed to connect account', 'error');
+      if (!ok || !data) {
+        showToast(error || data?.error || 'Failed to connect account', 'error');
         return false;
       }
       setAccounts((prev) => [...prev, data.account]);
@@ -241,8 +236,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const disconnectAccount = async (id: string): Promise<boolean> => {
     try {
-      const res = await fetch(`/api/social/disconnect/${id}`, { method: 'DELETE' });
-      if (res.ok) {
+      const { ok } = await safeFetchJson(`/api/social/disconnect/${id}`, { method: 'DELETE' });
+      if (ok) {
         setAccounts((prev) => prev.filter((a) => a.id !== id));
         showToast(lang === 'ar' ? 'تم فصل الحساب بنجاح.' : 'Account disconnected.', 'info');
         return true;
@@ -256,12 +251,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const loginAs = async (role: 'user' | 'admin') => {
     const email = role === 'admin' ? 'admin@orvex.ai' : 'demo@orvex.ai';
     try {
-      const res = await fetch('/api/auth/login', {
+      const { ok, data, error } = await safeFetchJson('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json();
+      if (!ok || !data) {
+        showToast(error || 'Login failed', 'error');
+        return;
+      }
       setUser(data.user);
       setWallet(data.wallet);
       setIsAuthModalOpen(false);

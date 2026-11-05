@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Shield, Lock, User, Eye, EyeOff, X, AlertTriangle } from 'lucide-react';
+import { safeFetchJson } from '../../utils/safeFetch';
 
 interface AdminAuthModalProps {
   isOpen: boolean;
@@ -25,7 +26,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
     setIsLoading(true);
 
     try {
-      const res = await fetch('/api/admin/auth', {
+      const { ok, data, error } = await safeFetchJson('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -34,10 +35,8 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
         }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || (isAr ? 'بيانات الاعتماد غير صحيحة' : 'Invalid credentials'));
+      if (!ok || !data) {
+        throw new Error(error || data?.error || (isAr ? 'بيانات الاعتماد غير صحيحة' : 'Invalid credentials'));
       }
 
       setUser(data.user);

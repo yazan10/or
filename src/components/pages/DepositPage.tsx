@@ -21,6 +21,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { safeFetchJson } from '../../utils/safeFetch';
 
 export const DepositPage: React.FC = () => {
   const { user, wallet, lang, t, refreshBalances, showToast, setCurrentView, setDashboardTab } = useApp();
@@ -54,9 +55,8 @@ export const DepositPage: React.FC = () => {
     if (!user) return;
     setIsLoadingTxns(true);
     try {
-      const res = await fetch(`/api/paypal/transactions?userId=${user.id}`);
-      const data = await res.json();
-      if (res.ok && data.transactions) {
+      const { ok, data } = await safeFetchJson(`/api/paypal/transactions?userId=${user.id}`);
+      if (ok && data && data.transactions) {
         setTransactions(data.transactions);
       }
     } catch (err) {
@@ -150,7 +150,7 @@ export const DepositPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const res = await fetch('/api/paypal/pay-with-card', {
+      const { ok, data, error } = await safeFetchJson('/api/paypal/pay-with-card', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,9 +165,8 @@ export const DepositPage: React.FC = () => {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        throw new Error(data.error || 'Card authorization failed');
+      if (!ok || !data || data.error) {
+        throw new Error(error || data?.error || 'Card authorization failed');
       }
 
       await refreshBalances();
@@ -196,7 +195,7 @@ export const DepositPage: React.FC = () => {
 
     try {
       // 1. Create order
-      const orderRes = await fetch('/api/paypal/create-order', {
+      const { ok: orderOk, data: orderData, error: orderErr } = await safeFetchJson('/api/paypal/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -205,11 +204,12 @@ export const DepositPage: React.FC = () => {
           customTrials: packageType === 'custom' ? effectiveTrials : undefined,
         }),
       });
-      const orderData = await orderRes.json();
-      if (!orderRes.ok || orderData.error) throw new Error(orderData.error || 'Failed to initialize order');
+      if (!orderOk || !orderData || orderData.error) {
+        throw new Error(orderErr || orderData?.error || 'Failed to initialize order');
+      }
 
       // 2. Capture order
-      const capRes = await fetch('/api/paypal/capture-order', {
+      const { ok: capOk, data: capData, error: capErr } = await safeFetchJson('/api/paypal/capture-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -220,8 +220,9 @@ export const DepositPage: React.FC = () => {
           autoApproveSandbox: true,
         }),
       });
-      const capData = await capRes.json();
-      if (!capRes.ok || capData.error) throw new Error(capData.error || 'Failed to capture PayPal order');
+      if (!capOk || !capData || capData.error) {
+        throw new Error(capErr || capData?.error || 'Failed to capture PayPal order');
+      }
 
       await refreshBalances();
       await fetchTransactions();

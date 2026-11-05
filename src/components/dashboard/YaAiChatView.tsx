@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { safeFetchJson } from '../../utils/safeFetch';
 import {
   Sparkles,
   Send,
@@ -67,9 +68,8 @@ export const YaAiChatView: React.FC = () => {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`/api/ya-ai/messages?userId=${user?.id || 'user_1'}&lang=${lang}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await safeFetchJson(`/api/ya-ai/messages?userId=${user?.id || 'user_1'}&lang=${lang}`);
+      if (ok && data) {
         setMessages(data.messages || []);
       }
     } catch (e) {
@@ -95,7 +95,7 @@ export const YaAiChatView: React.FC = () => {
     setMessages((prev) => [...prev, tempUserMsg]);
 
     try {
-      const res = await fetch('/api/ya-ai/chat', {
+      const { ok, data, error } = await safeFetchJson('/api/ya-ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -105,9 +105,8 @@ export const YaAiChatView: React.FC = () => {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'YA ai response error');
+      if (!ok || !data) {
+        throw new Error(error || data?.error || 'YA ai response error');
       }
 
       setMessages(data.messages || []);
@@ -128,7 +127,7 @@ export const YaAiChatView: React.FC = () => {
 
   const handleClearChat = async () => {
     try {
-      await fetch('/api/ya-ai/clear', {
+      await safeFetchJson('/api/ya-ai/clear', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id || 'user_1' }),

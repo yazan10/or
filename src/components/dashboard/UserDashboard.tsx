@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { AnalyticsDesktopPrompt } from './AnalyticsDesktopPrompt';
 import { YaAiChatView } from './YaAiChatView';
 import { PayPalCheckoutModal } from '../payment/PayPalCheckoutModal';
+import { safeFetchJson } from '../../utils/safeFetch';
 
 export const UserDashboard: React.FC = () => {
   const {
@@ -110,9 +111,8 @@ export const UserDashboard: React.FC = () => {
   const fetchLedger = async () => {
     if (!user) return;
     try {
-      const res = await fetch(`/api/wallet/ledger?userId=${user.id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await safeFetchJson(`/api/wallet/ledger?userId=${user.id}`);
+      if (ok && data) {
         setLedgerItems(data.ledger || []);
       }
     } catch (e) {
@@ -142,7 +142,7 @@ export const UserDashboard: React.FC = () => {
     setTimeout(() => setAnalysisPhase(4), 4200);
 
     try {
-      const res = await fetch('/api/analysis/run', {
+      const { ok, data, error } = await safeFetchJson('/api/analysis/run', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -153,13 +153,14 @@ export const UserDashboard: React.FC = () => {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Analysis failed');
+      if (!ok || !data) {
+        throw new Error(error || data?.error || 'Analysis failed');
       }
 
       await refreshBalances();
-      await loadReportDetails(data.report.id);
+      if (data.report?.id) {
+        await loadReportDetails(data.report.id);
+      }
       setIsAnalyzing(false);
       showToast(t.analysisFlow.successTitle, 'success');
       setDashboardTab('report-details');
@@ -180,7 +181,7 @@ export const UserDashboard: React.FC = () => {
 
     setIsSubmittingFollowUp(true);
     try {
-      const res = await fetch('/api/analysis/follow-up', {
+      const { ok, data, error } = await safeFetchJson('/api/analysis/follow-up', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -189,11 +190,10 @@ export const UserDashboard: React.FC = () => {
           lang,
         }),
       });
-      const data = await res.json();
-      if (res.ok) {
+      if (ok && data) {
         setFollowUpAnswer(data.answer);
       } else {
-        showToast(data.error || 'Failed to submit question', 'error');
+        showToast(error || data?.error || 'Failed to submit question', 'error');
       }
     } catch (e: any) {
       showToast(e.message || 'Network error', 'error');
@@ -216,7 +216,7 @@ export const UserDashboard: React.FC = () => {
     setChatInput('');
 
     try {
-      const res = await fetch('/api/analysis/chat', {
+      const { ok, data, error } = await safeFetchJson('/api/analysis/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -225,12 +225,11 @@ export const UserDashboard: React.FC = () => {
           lang,
         }),
       });
-      const data = await res.json();
-      if (res.ok) {
+      if (ok && data) {
         setChatMessages(data.chatMessages || []);
         setTotalChatChars(data.totalChatCharsUsed || 0);
       } else {
-        showToast(data.error || 'Error sending chat', 'error');
+        showToast(error || data?.error || 'Error sending chat', 'error');
       }
     } catch (e: any) {
       showToast(e.message || 'Chat error', 'error');

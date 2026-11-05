@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import http from 'http';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
@@ -1888,16 +1888,27 @@ Return ONLY valid JSON without markdown fences matching this shape:
 }
 `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: promptText,
-        config: {
-          responseMimeType: 'application/json',
-        },
-      });
+      try {
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: promptText,
+          config: {
+            responseMimeType: 'application/json',
+          },
+        });
 
-      const rawJson = (response.text || '{}').trim();
-      reportData = JSON.parse(rawJson);
+        let rawJson = (response.text || '{}').trim();
+        if (rawJson.startsWith('```')) {
+          rawJson = rawJson.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+        }
+        try {
+          reportData = JSON.parse(rawJson);
+        } catch (jsonErr) {
+          console.warn('Failed to parse Gemini JSON output, using realistic fallback:', jsonErr);
+        }
+      } catch (aiErr: any) {
+        console.warn('Gemini generateContent temporary error/spike, using realistic fallback:', aiErr?.message || aiErr);
+      }
     }
 
     if (!reportData || !reportData.performanceScore) {
@@ -2400,6 +2411,20 @@ app.put('/api/admin/prompts/:id', (req: Request, res: Response) => {
 
 app.get('/api/admin/audit-logs', (req: Request, res: Response) => {
   res.json({ auditLogs: auditLogs.slice().reverse() });
+});
+
+// Fallback for unmatched /api routes ensuring JSON is ALWAYS returned, never HTML
+app.all('/api/*', (req: Request, res: Response) => {
+  res.status(404).json({ error: `API route not found: ${req.method} ${req.path}`, success: false });
+});
+
+// Global API error handler ensuring JSON is ALWAYS returned
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api')) {
+    console.error('[API Error]', err);
+    return res.status(err.status || 500).json({ error: err.message || 'Internal API Error', success: false });
+  }
+  next(err);
 });
 
 // Setup server (Vite middleware in dev, static files in production)

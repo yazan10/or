@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, Lock, Sparkles, User, Shield } from 'lucide-react';
+import { safeFetchJson } from '../../utils/safeFetch';
 
 export const AuthPage: React.FC = () => {
   const { lang, t, setUser, refreshBalances, setCurrentView, showToast } = useApp();
@@ -33,7 +34,7 @@ export const AuthPage: React.FC = () => {
   const handleGoogleLogin = async (account: { email: string; name: string; avatarUrl?: string }) => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/auth/google', {
+      const { ok, data, error } = await safeFetchJson('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -44,9 +45,8 @@ export const AuthPage: React.FC = () => {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Google Authentication failed');
+      if (!ok || !data) {
+        throw new Error(error || data?.error || 'Google Authentication failed');
       }
 
       setUser(data.user);

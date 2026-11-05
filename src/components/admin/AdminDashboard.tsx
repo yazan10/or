@@ -20,6 +20,7 @@ import {
   RefreshCw,
   ExternalLink,
 } from 'lucide-react';
+import { safeFetchJson } from '../../utils/safeFetch';
 
 export const AdminDashboard: React.FC = () => {
   const { user, lang, t, showToast, setCurrentView } = useApp();
@@ -73,47 +74,31 @@ export const AdminDashboard: React.FC = () => {
   const fetchAdminData = async () => {
     try {
       const [resStats, resUsers, resPricing, resPrompts, resAudit, resPaypal, resTx] = await Promise.all([
-        fetch('/api/admin/stats'),
-        fetch('/api/admin/users'),
-        fetch('/api/admin/pricing'),
-        fetch('/api/admin/prompts'),
-        fetch('/api/admin/audit-logs'),
-        fetch('/api/admin/paypal-config'),
-        fetch('/api/paypal/transactions'),
+        safeFetchJson('/api/admin/stats'),
+        safeFetchJson('/api/admin/users'),
+        safeFetchJson('/api/admin/pricing'),
+        safeFetchJson('/api/admin/prompts'),
+        safeFetchJson('/api/admin/audit-logs'),
+        safeFetchJson('/api/admin/paypal-config'),
+        safeFetchJson('/api/paypal/transactions'),
       ]);
 
-      if (resStats.ok) setStats(await resStats.json());
-      if (resUsers.ok) {
-        const uData = await resUsers.json();
-        setUsersList(uData.users || []);
+      if (resStats.ok && resStats.data) setStats(resStats.data);
+      if (resUsers.ok && resUsers.data) setUsersList(resUsers.data.users || []);
+      if (resPricing.ok && resPricing.data) setPricingSettings(resPricing.data.pricingSettings);
+      if (resPrompts.ok && resPrompts.data) setPromptsList(resPrompts.data.promptTemplates || []);
+      if (resAudit.ok && resAudit.data) setAuditLogs(resAudit.data.auditLogs || []);
+      if (resPaypal.ok && resPaypal.data?.paypalConfig) {
+        setPaypalConfig({
+          clientId: resPaypal.data.paypalConfig.clientId || '',
+          clientSecret: resPaypal.data.paypalConfig.clientSecret || '',
+          environment: resPaypal.data.paypalConfig.environment || 'sandbox',
+          configured: !!resPaypal.data.paypalConfig.configured,
+          currency: resPaypal.data.paypalConfig.currency || 'USD',
+        });
       }
-      if (resPricing.ok) {
-        const pData = await resPricing.json();
-        setPricingSettings(pData.pricingSettings);
-      }
-      if (resPrompts.ok) {
-        const prData = await resPrompts.json();
-        setPromptsList(prData.promptTemplates || []);
-      }
-      if (resAudit.ok) {
-        const aData = await resAudit.json();
-        setAuditLogs(aData.auditLogs || []);
-      }
-      if (resPaypal.ok) {
-        const ppData = await resPaypal.json();
-        if (ppData.paypalConfig) {
-          setPaypalConfig({
-            clientId: ppData.paypalConfig.clientId || '',
-            clientSecret: ppData.paypalConfig.clientSecret || '',
-            environment: ppData.paypalConfig.environment || 'sandbox',
-            configured: !!ppData.paypalConfig.configured,
-            currency: ppData.paypalConfig.currency || 'USD',
-          });
-        }
-      }
-      if (resTx.ok) {
-        const txData = await resTx.json();
-        setPaypalTransactions(txData.transactions || []);
+      if (resTx.ok && resTx.data) {
+        setPaypalTransactions(resTx.data.transactions || []);
       }
     } catch (e) {
       console.warn('Error fetching admin data:', e);
@@ -123,9 +108,8 @@ export const AdminDashboard: React.FC = () => {
   const fetchTransactionsOnly = async () => {
     setLoadingTransactions(true);
     try {
-      const res = await fetch('/api/paypal/transactions');
-      if (res.ok) {
-        const data = await res.json();
+      const { ok, data } = await safeFetchJson('/api/paypal/transactions');
+      if (ok && data) {
         setPaypalTransactions(data.transactions || []);
         showToast(isAr ? 'تم تحديث سجل المعاملات' : 'Transactions updated', 'success');
       }
@@ -140,20 +124,19 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     setSavingPaypal(true);
     try {
-      const res = await fetch('/api/admin/paypal-config', {
+      const { ok, data, error } = await safeFetchJson('/api/admin/paypal-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(paypalConfig),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      if (ok && data?.success) {
         showToast(isAr ? 'تم حفظ إعدادات PayPal بنجاح!' : 'PayPal settings saved successfully!', 'success');
         setPaypalConfig((prev) => ({
           ...prev,
           configured: !!data.paypalConfig?.configured,
         }));
       } else {
-        showToast(data.error || 'Failed to save PayPal settings', 'error');
+        showToast(error || data?.error || 'Failed to save PayPal settings', 'error');
       }
     } catch (e) {
       showToast('Error saving PayPal configuration', 'error');
@@ -170,7 +153,7 @@ export const AdminDashboard: React.FC = () => {
     }
 
     try {
-      const res = await fetch(`/api/admin/users/${adjustTargetUser.id}/adjust-credits`, {
+      const { ok, data, error } = await safeFetchJson(`/api/admin/users/${adjustTargetUser.id}/adjust-credits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -180,14 +163,13 @@ export const AdminDashboard: React.FC = () => {
         }),
       });
 
-      if (res.ok) {
+      if (ok) {
         showToast(isAr ? 'تم تعديل الرصيد وتوثيق الإجراء في سجل التدقيق.' : 'Credits adjusted and logged in audit trail.', 'success');
         setAdjustTargetUser(null);
         setAdjustReason('');
         fetchAdminData();
       } else {
-        const err = await res.json();
-        showToast(err.error || 'Adjustment failed', 'error');
+        showToast(error || data?.error || 'Adjustment failed', 'error');
       }
     } catch (e: any) {
       showToast(e.message || 'Network error', 'error');
@@ -197,13 +179,13 @@ export const AdminDashboard: React.FC = () => {
   const handleSavePricing = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/admin/pricing', {
+      const { ok } = await safeFetchJson('/api/admin/pricing', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pricingSettings),
       });
 
-      if (res.ok) {
+      if (ok) {
         showToast(isAr ? 'تم حفظ هيكل الباقات والأسعار بنجاح!' : 'Pricing matrix saved successfully!', 'success');
         fetchAdminData();
       }
@@ -217,13 +199,13 @@ export const AdminDashboard: React.FC = () => {
     if (!editingPrompt) return;
 
     try {
-      const res = await fetch(`/api/admin/prompts/${editingPrompt.id}`, {
+      const { ok } = await safeFetchJson(`/api/admin/prompts/${editingPrompt.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ systemInstruction: promptText }),
       });
 
-      if (res.ok) {
+      if (ok) {
         showToast(isAr ? 'تم تحديث قالب Prompt بنجاح!' : 'Prompt template updated!', 'success');
         setEditingPrompt(null);
         fetchAdminData();
