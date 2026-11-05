@@ -26,9 +26,13 @@ export const AiCodeCursor: React.FC = () => {
       coordsRef.current.targetY = e.clientY;
       setCoords({ x: e.clientX, y: e.clientY });
 
-      // Determine interactive target
-      const target = e.target as HTMLElement | null;
-      if (target) {
+      // Determine interactive target safely (e.target can be a Text node, Window, or Document)
+      const rawTarget = e.target;
+      const target = rawTarget instanceof Element
+        ? rawTarget
+        : (rawTarget instanceof Node && rawTarget.parentElement ? rawTarget.parentElement : null);
+
+      if (target && typeof target.closest === 'function') {
         const isClickable = Boolean(
           target.closest('button, a, input, textarea, select, [role="button"], .cursor-pointer, [data-cursor]')
         );
@@ -48,6 +52,9 @@ export const AiCodeCursor: React.FC = () => {
           setIsPointer(false);
           setCursorText('IDLE');
         }
+      } else {
+        setIsPointer(false);
+        setCursorText('IDLE');
       }
     };
 

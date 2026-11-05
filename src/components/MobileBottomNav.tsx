@@ -103,7 +103,7 @@ export const MobileBottomNav: React.FC = () => {
           >
             <Shield className={`w-5 h-5 ${isAdminActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
             <span className="text-[10px] font-semibold mt-1 leading-tight tracking-tight">
-              yadmin
+              {isAr ? 'الإدارة' : 'Admin'}
             </span>
           </button>
         ) : (

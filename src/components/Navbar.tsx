@@ -27,11 +27,12 @@ export const Navbar: React.FC = () => {
   const isAr = lang === 'ar';
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  // 6-Clicks Secret Access Tracker on Platform Logo / Notification
+  // 6-Clicks Secret Access Tracker exclusively on Platform Logo Image Icon
   const [logoClicks, setLogoClicks] = useState(0);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSecretGestureClick = (e: React.MouseEvent) => {
+  const handleLogoIconClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (clickTimeoutRef.current) {
       clearTimeout(clickTimeoutRef.current);
     }
@@ -40,34 +41,18 @@ export const Navbar: React.FC = () => {
     setLogoClicks(nextCount);
 
     if (nextCount === 6) {
-      // 6 Clicks reached! Unlock Secret Admin Gate!
+      // 6 Clicks reached on platform logo! Open Administrative Gate quietly
       setLogoClicks(0);
       openAdminAuthModal();
-      showToast(
-        isAr
-          ? '🔐 تم تفعيل بوابة إدارة المنصة السرية بنجاح (yadmin)'
-          : '🔐 Secret Admin Gateway Unlocked (yadmin)',
-        'success'
-      );
       return;
     }
 
-    if (nextCount >= 3 && nextCount < 6) {
-      const remaining = 6 - nextCount;
-      showToast(
-        isAr
-          ? `باقي ${remaining} نقرات للوصول السري...`
-          : `${remaining} more clicks to unlock secret gateway...`,
-        'info'
-      );
-    }
-
-    // Reset after 3.2 seconds of inactivity
+    // Reset counter after 2.8s of inactivity
     clickTimeoutRef.current = setTimeout(() => {
       setLogoClicks(0);
-    }, 3200);
+    }, 2800);
 
-    // If only 1 click and not rapid clicking, navigate home
+    // Normal single click navigates home
     if (nextCount === 1) {
       setCurrentView('home');
     }
@@ -98,31 +83,22 @@ export const Navbar: React.FC = () => {
     <>
       <header className="sticky top-0 z-40 w-full bg-[#FAF9F5]/95 backdrop-blur-md border-b border-[#E6DFD8] px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3 transition-colors">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
-          {/* Zone 1: Platform Brand Logo with 6-Click Secret Trigger */}
+          {/* Zone 1: Platform Brand Logo (6 clicks on the logo image icon triggers admin) */}
           <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            <button
-              onClick={handleSecretGestureClick}
+            <div
+              onClick={handleLogoIconClick}
               className="flex items-center gap-2 sm:gap-2.5 text-left rtl:text-right group cursor-pointer focus:outline-none select-none relative"
-              title={
-                isAr
-                  ? 'ORVEX AI (اضغط 6 مرات للوصول السري إلى بوابة الإدارة)'
-                  : 'ORVEX AI (Click 6 times for Secret Admin Gate)'
-              }
+              title="ORVEX AI"
             >
               <div className="relative w-8 h-8 rounded-lg bg-[#CC785C] flex items-center justify-center text-white font-black text-sm shadow-sm group-hover:bg-[#A9583E] transition-all transform group-active:scale-95">
                 O
-                {logoClicks > 0 && logoClicks < 6 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#181715] text-white text-[9px] font-bold flex items-center justify-center border border-white animate-pulse">
-                    {logoClicks}
-                  </span>
-                )}
               </div>
               <div className="flex flex-col">
                 <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#141413] whitespace-nowrap shrink-0 leading-tight">
                   ORVEX <span className="text-[#CC785C]">AI</span>
                 </span>
               </div>
-            </button>
+            </div>
           </div>
 
           {/* Zone 2: Desktop Nav Links */}
@@ -142,17 +118,13 @@ export const Navbar: React.FC = () => {
             ))}
           </nav>
 
-          {/* Zone 3: Actions (Notification Trigger + Language Switcher + دائرة بروفايلي + Mobile Hamburger) */}
+          {/* Zone 3: Actions (Notification + Language Switcher + دائرة بروفايلي + Mobile Hamburger) */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Platform Notification Icon (Clicking 6 times ALSO triggers Secret Admin Gate) */}
+            {/* Platform Notification Icon (Clean notifications indicator) */}
             <button
-              onClick={handleSecretGestureClick}
+              onClick={() => showToast(isAr ? 'لا توجد إشعارات جديدة حالياً' : 'No new notifications at this time', 'info')}
               className="p-2 rounded-xl border border-[#E6DFD8] text-[#6C6A64] hover:text-[#141413] hover:bg-[#EFE9DE] transition-colors relative cursor-pointer"
-              title={
-                isAr
-                  ? 'إشعارات المنصة (اضغط 6 مرات لفتح بوابة yadmin)'
-                  : 'Platform Notifications (Click 6 times for yadmin access)'
-              }
+              title={isAr ? 'الإشعارات' : 'Notifications'}
             >
               <Bell className="w-4 h-4" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#5DB8A6]"></span>
@@ -177,7 +149,7 @@ export const Navbar: React.FC = () => {
                 className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl bg-[#181715] hover:bg-[#252320] text-[#FAF9F5] border border-[#35322D] transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-xs"
               >
                 <Shield className="w-3.5 h-3.5 text-[#E8A55A]" />
-                <span className="hidden sm:inline">yadmin</span>
+                <span className="hidden sm:inline">{isAr ? 'لوحة الإدارة' : 'Admin'}</span>
               </button>
             )}
 

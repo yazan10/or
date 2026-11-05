@@ -143,8 +143,8 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
                     >
                       {user.role === 'admin'
                         ? isAr
-                          ? 'مدير المنصة (yadmin)'
-                          : 'Super Admin (yadmin)'
+                          ? 'مدير المنصة'
+                          : 'Super Admin'
                         : isAr
                         ? 'صانع محتوى'
                         : 'Creator'}
@@ -315,31 +315,17 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
             <ArrowIcon className="w-4 h-4 text-[#A09C94]" />
           </button>
 
-          {/* Admin shortcut */}
-          {user?.role === 'admin' ? (
+          {/* Admin shortcut (Only for verified admin session) */}
+          {user?.role === 'admin' && (
             <button
               onClick={() => navigateTo('admin')}
-              className={`w-full p-3 rounded-xl text-xs font-bold flex items-center justify-between transition-colors cursor-pointer mt-2 bg-[#181715] text-[#FAF9F5] border border-[#35322D] shadow-sm`}
+              className="w-full p-3 rounded-xl text-xs font-bold flex items-center justify-between transition-colors cursor-pointer mt-2 bg-[#181715] text-[#FAF9F5] border border-[#35322D] shadow-sm"
             >
               <div className="flex items-center gap-3">
                 <Shield className="w-4 h-4 text-[#E8A55A]" />
-                <span>{isAr ? 'لوحة تحكم الأدمن (yadmin)' : 'Admin Dashboard (yadmin)'}</span>
+                <span>{isAr ? 'لوحة تحكم الإدارة' : 'Admin Dashboard'}</span>
               </div>
               <ArrowIcon className="w-4 h-4 text-[#E8A55A]" />
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                onClose();
-                openAdminAuthModal();
-              }}
-              className="w-full p-3 rounded-xl text-xs font-medium flex items-center justify-between text-[#6C6A64] hover:bg-[#EFE9DE] transition-colors cursor-pointer mt-1"
-            >
-              <div className="flex items-center gap-3">
-                <Shield className="w-4 h-4 text-[#A09C94]" />
-                <span>{isAr ? 'دخول الأدمن السري' : 'Secret Admin Access'}</span>
-              </div>
-              <ArrowIcon className="w-4 h-4 text-[#A09C94]" />
             </button>
           )}
         </div>

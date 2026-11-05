@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Shield, Lock, User, Eye, EyeOff, KeyRound, Sparkles, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Shield, Lock, User, Eye, EyeOff, X, AlertTriangle } from 'lucide-react';
 
 interface AdminAuthModalProps {
   isOpen: boolean;
@@ -18,12 +18,6 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
   const [errorMessage, setErrorMessage] = useState('');
 
   if (!isOpen) return null;
-
-  const handleQuickFill = () => {
-    setUsername('yadmin');
-    setPassword('maya@#5Y');
-    setErrorMessage('');
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +37,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || (isAr ? 'اسم المسؤول أو كلمة المرور غير صحيحة' : 'Invalid admin credentials'));
+        throw new Error(data.error || (isAr ? 'بيانات الاعتماد غير صحيحة' : 'Invalid credentials'));
       }
 
       setUser(data.user);
@@ -54,27 +48,27 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
 
       showToast(
         isAr
-          ? 'مرحباً بك يا yadmin، تم تسجيل دخولك بنجاح كمدير رئيسي للمنصة!'
-          : 'Welcome yadmin, successfully authenticated as platform administrator!',
+          ? 'تم تسجيل الدخول بنجاح إلى لوحة الإدارة'
+          : 'Successfully authenticated to administration portal',
         'success'
       );
 
       onClose();
       setCurrentView('admin');
     } catch (err: any) {
-      setErrorMessage(err.message || (isAr ? 'بيانات المسؤول غير صحيحة' : 'Authentication failed'));
+      setErrorMessage(err.message || (isAr ? 'فشل التحقق من بيانات الدخول' : 'Authentication failed'));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-md bg-[#181715] text-[#FAF9F5] border border-[#35322D] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 rtl:right-auto rtl:left-5 text-[#A09C94] hover:text-[#FAF9F5] p-1 rounded-lg hover:bg-[#252320] transition-colors cursor-pointer"
+          className="absolute top-5 right-5 rtl:right-auto rtl:left-5 text-[#A09C94] hover:text-[#FAF9F5] p-1.5 rounded-xl hover:bg-[#252320] transition-colors cursor-pointer"
           title={isAr ? 'إغلاق' : 'Close'}
         >
           <X className="w-5 h-5" />
@@ -82,13 +76,13 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
 
         {/* Security Badge & Header */}
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-[#CC785C]/20 border border-[#CC785C]/40 text-[#CC785C] flex items-center justify-center mx-auto shadow-inner">
-            <Shield className="w-7 h-7" />
+          <div className="w-13 h-13 rounded-2xl bg-[#CC785C]/20 border border-[#CC785C]/40 text-[#CC785C] flex items-center justify-center mx-auto shadow-inner">
+            <Shield className="w-6 h-6" />
           </div>
 
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8A55A]/15 border border-[#E8A55A]/30 text-[#E8A55A] text-[11px] font-semibold">
-            <KeyRound className="w-3.5 h-3.5" />
-            <span>{isAr ? 'بوابة الإدارة السرية (6 نقرات)' : 'Secret Admin Gate (6 Clicks)'}</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#35322D] border border-[#444039] text-[#A09C94] text-[11px] font-semibold">
+            <Lock className="w-3 h-3 text-[#5DB8A6]" />
+            <span>{isAr ? 'مصادقة الإدارة المعتمدة' : 'Authorized Gateway'}</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-[#FAF9F5]">
@@ -121,6 +115,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
               <input
                 type="text"
                 required
+                autoComplete="off"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder={t.adminAuth.usernamePlaceholder}
@@ -141,6 +136,7 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={t.adminAuth.passwordPlaceholder}
@@ -156,21 +152,11 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
             </div>
           </div>
 
-          {/* Quick-fill helper button */}
-          <button
-            type="button"
-            onClick={handleQuickFill}
-            className="w-full py-2 px-3 text-[11px] font-semibold text-[#CC785C] hover:text-[#E8A55A] bg-[#252320] hover:bg-[#2e2b27] border border-[#35322D] rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{t.adminAuth.quickFillBtn}</span>
-          </button>
-
           {/* Submit */}
           <button
             type="submit"
             disabled={isLoading || !username || !password}
-            className="w-full py-3 text-xs font-bold rounded-xl bg-[#CC785C] hover:bg-[#A9583E] text-white shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 text-xs font-bold rounded-xl bg-gradient-to-r from-[#CC785C] to-[#A9583E] hover:from-[#A9583E] hover:to-[#924732] text-white shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed mt-2 btn-shimmer"
           >
             {isLoading ? (
               <span>{isAr ? 'جاري التحقق...' : 'Authenticating...'}</span>
@@ -182,15 +168,6 @@ export const AdminAuthModal: React.FC<AdminAuthModalProps> = ({ isOpen, onClose 
             )}
           </button>
         </form>
-
-        {/* Informational footer note */}
-        <div className="pt-2 border-t border-[#35322D] text-center">
-          <p className="text-[11px] text-[#A09C94]">
-            {isAr
-              ? 'المسؤول المعتمد: yadmin · كلمة المرور: maya@#5Y'
-              : 'Authorized Admin: yadmin · Password: maya@#5Y'}
-          </p>
-        </div>
       </div>
     </div>
   );
