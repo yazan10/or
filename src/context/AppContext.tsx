@@ -43,6 +43,10 @@ interface AppContextType {
   connectAccount: (platform: SocialPlatform, accountName: string, username: string) => Promise<boolean>;
   disconnectAccount: (id: string) => Promise<boolean>;
   refreshBalances: () => Promise<void>;
+  isAdminAuthModalOpen: boolean;
+  openAdminAuthModal: () => void;
+  closeAdminAuthModal: () => void;
+  setWallet: (wallet: WalletBalances) => void;
   deviceMode: 'mobile' | 'desktop';
   setDeviceMode: (mode: 'mobile' | 'desktop') => void;
   toggleDeviceMode: () => void;
@@ -85,8 +89,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<SocialPlatform>('instagram');
   const [notifications, setNotifications] = useState<ToastNotification[]>([]);
-  const [deviceMode, setDeviceModeState] = useState<'mobile' | 'desktop'>('mobile');
-  const [analyticsQualityDismissed, setAnalyticsQualityDismissed] = useState<boolean>(false);
+  const [deviceMode, setDeviceModeState] = useState<'mobile' | 'desktop'>('desktop');
+  const [analyticsQualityDismissed, setAnalyticsQualityDismissed] = useState<boolean>(true);
+  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
+
+  const openAdminAuthModal = () => setIsAdminAuthModalOpen(true);
+  const closeAdminAuthModal = () => setIsAdminAuthModalOpen(false);
 
   const setDeviceMode = (mode: 'mobile' | 'desktop') => {
     setDeviceModeState(mode);
@@ -270,8 +278,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setUser(null);
-    setCurrentView('home');
-    showToast(lang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Signed out.', 'info');
+    setCurrentView('logout');
+    showToast(lang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Signed out successfully.', 'info');
   };
 
   const openAuthModal = () => setCurrentView('auth');
@@ -320,6 +328,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         connectAccount,
         disconnectAccount,
         refreshBalances,
+        isAdminAuthModalOpen,
+        openAdminAuthModal,
+        closeAdminAuthModal,
+        setWallet,
         deviceMode,
         setDeviceMode,
         toggleDeviceMode,

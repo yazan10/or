@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Home, Compass, CreditCard, BarChart3, User, Sparkles } from 'lucide-react';
+import { Home, Compass, CreditCard, BarChart3, User, Shield } from 'lucide-react';
 
 export const MobileBottomNav: React.FC = () => {
   const { currentView, setCurrentView, user, wallet, t, lang, setDashboardTab, dashboardTab } = useApp();
@@ -19,12 +19,13 @@ export const MobileBottomNav: React.FC = () => {
   const isHowActive = currentView === 'how-it-works';
   const isPricingActive = currentView === 'pricing';
   const isDashboardActive = currentView === 'dashboard';
+  const isAdminActive = currentView === 'admin';
   const isAuthOrProfileActive = currentView === 'auth' || (currentView === 'dashboard' && dashboardTab === 'profile');
 
   return (
     <nav
       aria-label="Mobile Bottom Navigation"
-      className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F5]/95 backdrop-blur-lg border-t border-[#E6DFD8] px-2 py-2 sm:hidden transition-all shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+      className="fixed bottom-0 inset-x-0 z-40 bg-[#FAF9F5]/95 backdrop-blur-lg border-t border-[#E6DFD8] px-2 py-1.5 transition-all shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
     >
       <div className="flex items-center justify-around max-w-md mx-auto">
         {/* Home */}
@@ -92,32 +93,46 @@ export const MobileBottomNav: React.FC = () => {
           </span>
         </button>
 
-        {/* Account / Login */}
-        <button
-          onClick={() => {
-            if (user) {
-              handleNav('dashboard', 'profile');
-            } else {
-              handleNav('auth');
-            }
-          }}
-          className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-colors cursor-pointer ${
-            isAuthOrProfileActive ? 'text-[#CC785C]' : 'text-[#6C6A64] hover:text-[#141413]'
-          }`}
-        >
-          {user?.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt=""
-              className="w-5 h-5 rounded-full object-cover border border-[#E6DFD8]"
-            />
-          ) : (
-            <User className={`w-5 h-5 ${isAuthOrProfileActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
-          )}
-          <span className="text-[10px] font-semibold mt-1 leading-tight tracking-tight">
-            {user ? t.mobileApp.bottomNavProfile : t.nav.login}
-          </span>
-        </button>
+        {/* Admin or Profile */}
+        {user?.role === 'admin' ? (
+          <button
+            onClick={() => handleNav('admin')}
+            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-colors cursor-pointer ${
+              isAdminActive ? 'text-[#E8A55A]' : 'text-[#6C6A64] hover:text-[#141413]'
+            }`}
+          >
+            <Shield className={`w-5 h-5 ${isAdminActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            <span className="text-[10px] font-semibold mt-1 leading-tight tracking-tight">
+              yadmin
+            </span>
+          </button>
+        ) : (
+          <button
+            onClick={() => {
+              if (user) {
+                handleNav('dashboard', 'profile');
+              } else {
+                handleNav('auth');
+              }
+            }}
+            className={`flex flex-col items-center justify-center flex-1 py-1 px-1 rounded-xl transition-colors cursor-pointer ${
+              isAuthOrProfileActive ? 'text-[#CC785C]' : 'text-[#6C6A64] hover:text-[#141413]'
+            }`}
+          >
+            {user?.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt=""
+                className="w-5 h-5 rounded-full object-cover border border-[#E6DFD8]"
+              />
+            ) : (
+              <User className={`w-5 h-5 ${isAuthOrProfileActive ? 'stroke-[2.5]' : 'stroke-[1.75]'}`} />
+            )}
+            <span className="text-[10px] font-semibold mt-1 leading-tight tracking-tight">
+              {user ? t.mobileApp.bottomNavProfile : t.nav.login}
+            </span>
+          </button>
+        )}
       </div>
     </nav>
   );

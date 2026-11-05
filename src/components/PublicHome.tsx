@@ -15,7 +15,9 @@ import {
   Wallet,
   MessageSquare,
   ChevronDown,
+  Terminal as TerminalIcon,
 } from 'lucide-react';
+import { AnalysisTerminal } from './AnalysisTerminal';
 
 type PaperId = 'audit' | 'plan' | 'wallet' | 'meta' | null;
 
@@ -70,16 +72,21 @@ export const PublicHome: React.FC = () => {
 
   return (
     <div className="space-y-20 sm:space-y-28 pb-16">
-      {/* ================= HERO ================= */}
-      <section className="pt-14 sm:pt-20 px-5 sm:px-8 max-w-4xl mx-auto text-center space-y-7">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
+      {/* ================= HERO WITH DYNAMIC MOTION ACCENTS ================= */}
+      <section className="pt-14 sm:pt-20 px-5 sm:px-8 max-w-4xl mx-auto text-center space-y-7 relative">
+        {/* Subtle Floating AI Tech Background Accents */}
+        <div className="absolute -top-10 -left-12 w-48 h-48 rounded-full bg-gradient-to-tr from-[#CC785C]/15 to-[#E8A55A]/10 blur-3xl pointer-events-none animate-float" />
+        <div className="absolute top-20 -right-12 w-56 h-56 rounded-full bg-gradient-to-bl from-[#5DB8A6]/15 to-[#1877F2]/10 blur-3xl pointer-events-none animate-float-reverse" />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.45 }}
-          className="text-xs sm:text-sm font-semibold tracking-[0.18em] text-[#CC785C] uppercase"
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#CC785C]/10 border border-[#CC785C]/30 text-xs font-bold text-[#CC785C] shadow-xs animate-badge-sparkle"
         >
-          {t.hero.kicker}
-        </motion.p>
+          <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+          <span className="tracking-[0.15em] uppercase">{t.hero.kicker}</span>
+        </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 18 }}
@@ -105,20 +112,24 @@ export const PublicHome: React.FC = () => {
           transition={{ duration: 0.45, delay: 0.24 }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1"
         >
-          <button
+          <motion.button
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => (user ? setCurrentView('dashboard') : setCurrentView('auth'))}
-            className="w-full sm:w-auto px-8 py-3.5 text-sm font-bold rounded-xl bg-[#CC785C] hover:bg-[#A9583E] text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full sm:w-auto px-8 py-3.5 text-sm font-bold rounded-xl bg-gradient-to-r from-[#CC785C] to-[#A9583E] hover:from-[#A9583E] hover:to-[#924732] text-white shadow-md hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer btn-shimmer"
           >
             <span>{t.hero.primaryCta}</span>
             <ArrowIcon className="w-4 h-4" />
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02, y: -1 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => document.getElementById('papers-section')?.scrollIntoView({ behavior: 'smooth' })}
             className="w-full sm:w-auto px-6 py-3.5 text-sm font-semibold rounded-xl bg-[#EFE9DE] hover:bg-[#E8E0D2] text-[#141413] border border-[#E6DFD8] transition-colors cursor-pointer flex items-center justify-center gap-2"
           >
             <span>{isAr ? 'استكشف القدرات' : 'Explore capabilities'}</span>
             <ChevronDown className="w-4 h-4" />
-          </button>
+          </motion.button>
         </motion.div>
 
         <motion.div
@@ -127,19 +138,39 @@ export const PublicHome: React.FC = () => {
           transition={{ delay: 0.38 }}
           className="pt-6 flex flex-wrap items-center justify-center gap-5 sm:gap-8 text-xs text-[#6C6A64]"
         >
-          <div className="flex items-center gap-2">
+          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-[#5DB8A6]" />
             <span>{t.hero.badgeOfficial}</span>
-          </div>
-          <div className="flex items-center gap-2">
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-[#CC785C]" />
             <span>{t.hero.badgeNoScraping}</span>
-          </div>
-          <div className="flex items-center gap-2">
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.05 }} className="flex items-center gap-2">
             <RefreshCw className="w-4 h-4 text-[#5DB8A6]" />
             <span>{t.hero.badgeCreditsNeverExpire}</span>
-          </div>
+          </motion.div>
         </motion.div>
+      </section>
+
+      {/* ================= LIVE ANALYSIS ENGINE TERMINAL ================= */}
+      <section className="px-4 sm:px-8 max-w-4xl mx-auto space-y-5">
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CC785C]/15 border border-[#CC785C]/30 text-[#CC785C] text-[11px] font-bold">
+            <TerminalIcon className="w-3.5 h-3.5" />
+            <span>{isAr ? 'محاكاة حية لمحرك التحليل (Live Engine Terminal)' : 'Live Engine Simulation Terminal'}</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#141413]">
+            {isAr ? 'شاهد كيف يعالج الذكاء الاصطناعي بيانات حسابك لحظياً' : 'Watch How the AI Ingests & Analyzes Your Data in Real Time'}
+          </h2>
+          <p className="text-xs sm:text-sm text-[#6C6A64] max-w-xl mx-auto leading-relaxed">
+            {isAr
+              ? 'تدفق حي لأسطر الأكواد والعمليات التحليلية: مصادقة Meta API، استخراج مؤشرات التفاعل، وتوليد استنتاجات SWOT وخطة الـ 30 يوماً.'
+              : 'Live stream of analytical code execution: Meta API ingestion, net engagement computation, and 30-day calendar token generation.'}
+          </p>
+        </div>
+
+        <AnalysisTerminal />
       </section>
 
       {/* ================= PAPER STACK (Creasefold style) ================= */}
@@ -259,37 +290,253 @@ export const PublicHome: React.FC = () => {
         </p>
       </section>
 
-      {/* ================= PRICING STRIP ================= */}
-      <section className="px-5 sm:px-8 max-w-4xl mx-auto">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-          {[
-            {
-              icon: <Instagram className="w-5 h-5 text-[#CC785C]" />,
-              title: 'Instagram',
-              desc: isAr ? '3 محاولات بـ 12 شيقل · ثم 10 بـ 8' : '3 trials for 12 ILS · then 10 for 8',
-            },
-            {
-              icon: <Facebook className="w-5 h-5 text-[#1877F2]" />,
-              title: 'Facebook',
-              desc: isAr ? '3 محاولات بـ 15 شيقل · ثم 10 بـ 10' : '3 trials for 15 ILS · then 10 for 10',
-            },
-            {
-              icon: <MessageSquare className="w-5 h-5 text-[#5DB8A6]" />,
-              title: isAr ? 'مشمول مجاناً' : 'Included free',
-              desc: isAr ? 'سؤال متابعة + دردشة استشارية' : 'Follow-up + advisory chat',
-            },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="p-4.5 sm:p-5 rounded-2xl bg-white border border-[#E6DFD8] flex items-start gap-3 shadow-sm"
-            >
-              <div className="mt-0.5">{item.icon}</div>
-              <div>
-                <p className="text-sm font-bold text-[#141413]">{item.title}</p>
-                <p className="text-xs text-[#6C6A64] mt-0.5 leading-relaxed">{item.desc}</p>
+      {/* ================= PRICING PACKAGES SECTION ================= */}
+      <section id="pricing-section" className="px-5 sm:px-8 max-w-5xl mx-auto space-y-10">
+        <div className="text-center space-y-3 max-w-2xl mx-auto">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#CC785C]/15 border border-[#CC785C]/30 text-[#CC785C] text-xs font-bold">
+            <Wallet className="w-3.5 h-3.5" />
+            <span>{isAr ? 'باقات التسعير والمحافظ الذكية' : 'Transparent Pricing & Permanent Wallets'}</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#141413] tracking-tight">
+            {isAr ? 'محاولات تحليل وخطة محتوى لا تنتهي صلاحيتها' : 'Analysis Trials & Content Calendars That Never Expire'}
+          </h2>
+          <p className="text-xs sm:text-sm text-[#6C6A64] leading-relaxed">
+            {isAr
+              ? 'محفظة مستقلة لكل منصة، بدون أي اشتراكات دورية إجبارية. كل محاولة تتضمن تقريراً تشخيصياً شاملاً، وخطة محتوى 30 يوماً، ومحادثة استشارية مع موديل YA ai.'
+              : 'Independent balance per platform. No recurring locks. Every trial includes full SWOT audit, 30-day calendar, and advisory chat with YA ai model.'}
+          </p>
+        </div>
+
+        {/* The Two Distinct Pricing Cards with Motion Effects */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          {/* Instagram Pricing Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            whileHover={{ y: -8, scale: 1.015 }}
+            data-cursor="ai"
+            className="bg-[#FAF9F5] p-6 sm:p-8 rounded-3xl border-2 border-[#CC785C]/50 shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-[#CC785C] hover:shadow-[0_20px_40px_-15px_rgba(204,120,92,0.25)] transition-all cursor-default"
+          >
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#E1306C]/10 text-[#E1306C] flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                    <Instagram className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#141413]">Instagram Intelligence</h3>
+                    <p className="text-[11px] text-[#6C6A64]">{isAr ? 'لحسابات الأعمال والمبدعين' : 'For Business & Creator Accounts'}</p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#CC785C]/15 text-[#CC785C] border border-[#CC785C]/30 animate-badge-sparkle">
+                  {isAr ? 'الأكثر طلباً' : 'Most Popular'}
+                </span>
               </div>
+
+              {/* Tiers Pricing Grid */}
+              <div className="space-y-3 bg-[#EFE9DE] p-4 sm:p-5 rounded-2xl border border-[#E6DFD8] group-hover:border-[#CC785C]/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#CC785C] px-2 py-0.5 rounded bg-[#FAF9F5] border border-[#E6DFD8] inline-block mb-1">
+                      {isAr ? 'أول عملية شراء' : 'First Purchase'}
+                    </span>
+                    <p className="text-xs font-bold text-[#141413]">
+                      {isAr ? '3 محاولات تحليل شاملة' : '3 Full Analysis Trials'}
+                    </p>
+                  </div>
+                  <div className="text-right rtl:text-left">
+                    <span className="text-2xl font-black text-[#CC785C] tabular-nums">12 ILS</span>
+                    <p className="text-[10px] text-[#6C6A64]">{isAr ? 'فقط 4 شيقل / محاولة' : '4 ILS / trial'}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#E6DFD8]" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#3D3D3A] px-2 py-0.5 rounded bg-[#FAF9F5] border border-[#E6DFD8] inline-block mb-1">
+                      {isAr ? 'المشتريات اللاحقة' : 'Subsequent Purchases'}
+                    </span>
+                    <p className="text-xs font-bold text-[#141413]">
+                      {isAr ? '10 محاولات إضافية' : '10 Additional Trials'}
+                    </p>
+                  </div>
+                  <div className="text-right rtl:text-left">
+                    <span className="text-2xl font-black text-[#141413] tabular-nums">8 ILS</span>
+                    <p className="text-[10px] text-[#5DB8A6] font-semibold">{isAr ? 'أفضل قيمة اقتصادية' : 'Best Unit Value'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Inclusions */}
+              <ul className="space-y-2.5 text-xs text-[#3D3D3A]">
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'تقرير تشخيصي كامل (درجة أداء 0–100 + تحليل SWOT)' : 'Full Diagnostic Audit (0-100 Performance Score + SWOT)'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'خطة محتوى 30 يوماً يوم بيوم مع Hooks و CTAs وسيناريو' : '30-Day Day-by-Day Content Plan with Hooks, CTAs & Scripts'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'استشارات غير محدودة مع موديل YA ai الذكي' : 'Unlimited advisory chat with smart YA ai model'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'رصيد دائم ومحاولات لا تنتهي صلاحيتها أبداً' : 'Permanent balance — trials never expire'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'دفع إلكتروني آمن ومباشر عبر PayPal' : 'Secure instant checkout via PayPal'}</span>
+                </li>
+              </ul>
             </div>
-          ))}
+
+            <div className="pt-6">
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  if (user) {
+                    setCurrentView('dashboard');
+                  } else {
+                    setCurrentView('auth');
+                  }
+                }}
+                className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-[#CC785C] to-[#A9583E] hover:from-[#A9583E] hover:to-[#924732] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer btn-shimmer"
+              >
+                <span>{user ? (isAr ? 'شحن محفظة Instagram' : 'Top up Instagram Wallet') : (isAr ? 'ابدأ الآن مع Instagram' : 'Get Started with Instagram')}</span>
+                <ArrowIcon className="w-3.5 h-3.5" />
+              </motion.button>
+            </div>
+          </motion.div>
+
+          {/* Facebook Pricing Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            whileHover={{ y: -8, scale: 1.015 }}
+            data-cursor="ai"
+            className="bg-[#FAF9F5] p-6 sm:p-8 rounded-3xl border border-[#E6DFD8] shadow-sm relative overflow-hidden flex flex-col justify-between group hover:border-[#1877F2] hover:shadow-[0_20px_40px_-15px_rgba(24,119,242,0.25)] transition-all cursor-default"
+          >
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#1877F2]/10 text-[#1877F2] flex items-center justify-center shadow-xs group-hover:scale-110 transition-transform">
+                    <Facebook className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-[#141413]">Facebook Intelligence</h3>
+                    <p className="text-[11px] text-[#6C6A64]">{isAr ? 'لصفحات فيسبوك العامة والتجارية' : 'For Public Pages & Media Outlets'}</p>
+                  </div>
+                </div>
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#1877F2]/10 text-[#1877F2] border border-[#1877F2]/20">
+                  Facebook
+                </span>
+              </div>
+
+              {/* Tiers Pricing Grid */}
+              <div className="space-y-3 bg-[#EFE9DE] p-4 sm:p-5 rounded-2xl border border-[#E6DFD8] group-hover:border-[#1877F2]/30 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#1877F2] px-2 py-0.5 rounded bg-[#FAF9F5] border border-[#E6DFD8] inline-block mb-1">
+                      {isAr ? 'أول عملية شراء' : 'First Purchase'}
+                    </span>
+                    <p className="text-xs font-bold text-[#141413]">
+                      {isAr ? '3 محاولات تحليل شاملة' : '3 Full Analysis Trials'}
+                    </p>
+                  </div>
+                  <div className="text-right rtl:text-left">
+                    <span className="text-2xl font-black text-[#1877F2] tabular-nums">15 ILS</span>
+                    <p className="text-[10px] text-[#6C6A64]">{isAr ? 'فقط 5 شيقل / محاولة' : '5 ILS / trial'}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-[#E6DFD8]" />
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#3D3D3A] px-2 py-0.5 rounded bg-[#FAF9F5] border border-[#E6DFD8] inline-block mb-1">
+                      {isAr ? 'المشتريات اللاحقة' : 'Subsequent Purchases'}
+                    </span>
+                    <p className="text-xs font-bold text-[#141413]">
+                      {isAr ? '10 محاولات إضافية' : '10 Additional Trials'}
+                    </p>
+                  </div>
+                  <div className="text-right rtl:text-left">
+                    <span className="text-2xl font-black text-[#141413] tabular-nums">10 ILS</span>
+                    <p className="text-[10px] text-[#5DB8A6] font-semibold">{isAr ? 'فقط 1 شيقل / محاولة' : '1 ILS / trial'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Feature Inclusions */}
+              <ul className="space-y-2.5 text-xs text-[#3D3D3A]">
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'تدقيق شامل لأداء منشورات الصفحة والوصول العضوي' : 'Full Page Posts Audit & Organic Reach Insights'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'خطة محتوى 30 يوماً مفصلة لصفحات فيسبوك' : 'Detailed 30-day content calendar tailored for Facebook'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'استشارات مباشرة وتوليد أفكار مع موديل YA ai' : 'Direct consulting and concept drafting with YA ai model'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'رصيد دائم ومحاولات لا تنتهي صلاحيتها أبداً' : 'Permanent balance — trials never expire'}</span>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <span className="w-4 h-4 rounded-full bg-[#5DB8A6]/20 text-[#5DB8A6] flex items-center justify-center shrink-0 font-bold text-[10px]">✓</span>
+                  <span>{isAr ? 'دفع إلكتروني آمن ومباشر عبر PayPal' : 'Secure instant checkout via PayPal'}</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="pt-6">
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  if (user) {
+                    setCurrentView('dashboard');
+                  } else {
+                    setCurrentView('auth');
+                  }
+                }}
+                className="w-full py-3.5 px-4 rounded-xl bg-[#181715] hover:bg-[#252320] text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer btn-shimmer"
+              >
+                <span>{user ? (isAr ? 'شحن محفظة Facebook' : 'Top up Facebook Wallet') : (isAr ? 'ابدأ الآن مع Facebook' : 'Get Started with Facebook')}</span>
+                <ArrowIcon className="w-3.5 h-3.5" />
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* PayPal & Security Guarantee Bar */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-[#E6DFD8] flex flex-wrap items-center justify-between gap-4 text-xs text-[#6C6A64]">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="w-5 h-5 text-[#5DB8A6]" />
+            <div>
+              <p className="font-bold text-[#141413]">{isAr ? 'ضمان الدفع الآمن وسياسة الشيقل المحلي' : 'Secure Payment Guarantee & Local ILS Billing'}</p>
+              <p className="text-[11px] text-[#6C6A64]">{isAr ? 'جميع الأسعار محسوبة بالشيقل وتُحصّل عبر حسابك في PayPal بدون رسوم خفية' : 'All prices denominated in ILS and billed transparently via PayPal Checkout'}</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => setCurrentView('pricing')}
+            className="text-xs font-bold text-[#CC785C] hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>{isAr ? 'عرض صفحة الأسعار الكاملة' : 'View Full Pricing Page'}</span>
+            <ArrowIcon className="w-3.5 h-3.5" />
+          </button>
         </div>
       </section>
 

@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
-import { Globe, User as UserIcon, Shield, Sparkles, LayoutDashboard, Smartphone, Monitor } from 'lucide-react';
+import { motion } from 'motion/react';
+import {
+  Globe,
+  Shield,
+  LayoutDashboard,
+  Bell,
+  Menu,
+  User as UserIcon,
+} from 'lucide-react';
+import { MobileSidebar } from './MobileSidebar';
 
 export const Navbar: React.FC = () => {
   const {
@@ -10,161 +19,253 @@ export const Navbar: React.FC = () => {
     t,
     currentView,
     setCurrentView,
-    openAuthModal,
-    logout,
-    deviceMode,
-    toggleDeviceMode,
+    setDashboardTab,
+    openAdminAuthModal,
+    showToast,
   } = useApp();
+
+  const isAr = lang === 'ar';
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // 6-Clicks Secret Access Tracker on Platform Logo / Notification
+  const [logoClicks, setLogoClicks] = useState(0);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSecretGestureClick = (e: React.MouseEvent) => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+
+    const nextCount = logoClicks + 1;
+    setLogoClicks(nextCount);
+
+    if (nextCount === 6) {
+      // 6 Clicks reached! Unlock Secret Admin Gate!
+      setLogoClicks(0);
+      openAdminAuthModal();
+      showToast(
+        isAr
+          ? '🔐 تم تفعيل بوابة إدارة المنصة السرية بنجاح (yadmin)'
+          : '🔐 Secret Admin Gateway Unlocked (yadmin)',
+        'success'
+      );
+      return;
+    }
+
+    if (nextCount >= 3 && nextCount < 6) {
+      const remaining = 6 - nextCount;
+      showToast(
+        isAr
+          ? `باقي ${remaining} نقرات للوصول السري...`
+          : `${remaining} more clicks to unlock secret gateway...`,
+        'info'
+      );
+    }
+
+    // Reset after 3.2 seconds of inactivity
+    clickTimeoutRef.current = setTimeout(() => {
+      setLogoClicks(0);
+    }, 3200);
+
+    // If only 1 click and not rapid clicking, navigate home
+    if (nextCount === 1) {
+      setCurrentView('home');
+    }
+  };
 
   const toggleLanguage = () => {
     setLang(lang === 'ar' ? 'en' : 'ar');
   };
 
+  const navLinks = [
+    { id: 'home', label: t.nav.home },
+    { id: 'how-it-works', label: t.nav.howItWorks },
+    { id: 'features', label: t.nav.features },
+    { id: 'pricing', label: t.nav.pricing },
+    { id: 'faq', label: t.nav.faq },
+  ];
+
+  const userInitials = user?.name
+    ? user.name
+        .split(' ')
+        .slice(0, 2)
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+    : 'U';
+
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#FAF9F5]/90 backdrop-blur-md border-b border-[#E6DFD8] px-4 sm:px-8 py-3.5 transition-colors">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
-        {/* Zone 1: Brand Wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => setCurrentView('home')}
-            className="flex items-center gap-2.5 text-left rtl:text-right group cursor-pointer focus:outline-none"
-          >
-            <div className="w-8 h-8 rounded-lg bg-[#CC785C] flex items-center justify-center text-white font-bold text-sm shadow-sm group-hover:bg-[#A9583E] transition-colors">
-              O
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold tracking-tight text-[#141413] whitespace-nowrap shrink-0 leading-tight">
-                ORVEX <span className="text-[#CC785C]">AI</span>
+    <>
+      <header className="sticky top-0 z-40 w-full bg-[#FAF9F5]/95 backdrop-blur-md border-b border-[#E6DFD8] px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3 transition-colors">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
+          {/* Zone 1: Platform Brand Logo with 6-Click Secret Trigger */}
+          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <button
+              onClick={handleSecretGestureClick}
+              className="flex items-center gap-2 sm:gap-2.5 text-left rtl:text-right group cursor-pointer focus:outline-none select-none relative"
+              title={
+                isAr
+                  ? 'ORVEX AI (اضغط 6 مرات للوصول السري إلى بوابة الإدارة)'
+                  : 'ORVEX AI (Click 6 times for Secret Admin Gate)'
+              }
+            >
+              <div className="relative w-8 h-8 rounded-lg bg-[#CC785C] flex items-center justify-center text-white font-black text-sm shadow-sm group-hover:bg-[#A9583E] transition-all transform group-active:scale-95">
+                O
+                {logoClicks > 0 && logoClicks < 6 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#181715] text-white text-[9px] font-bold flex items-center justify-center border border-white animate-pulse">
+                    {logoClicks}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base sm:text-lg font-extrabold tracking-tight text-[#141413] whitespace-nowrap shrink-0 leading-tight">
+                  ORVEX <span className="text-[#CC785C]">AI</span>
+                </span>
+              </div>
+            </button>
+          </div>
+
+          {/* Zone 2: Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-5 lg:gap-6 text-xs lg:text-sm font-medium text-[#6C6A64]">
+            {navLinks.map((link) => (
+              <button
+                key={link.id}
+                onClick={() => setCurrentView(link.id)}
+                className={`whitespace-nowrap shrink-0 hover:text-[#141413] transition-colors cursor-pointer ${
+                  currentView === link.id
+                    ? 'text-[#141413] font-bold border-b-2 border-[#CC785C] pb-0.5'
+                    : ''
+                }`}
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* Zone 3: Actions (Notification Trigger + Language Switcher + دائرة بروفايلي + Mobile Hamburger) */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            {/* Platform Notification Icon (Clicking 6 times ALSO triggers Secret Admin Gate) */}
+            <button
+              onClick={handleSecretGestureClick}
+              className="p-2 rounded-xl border border-[#E6DFD8] text-[#6C6A64] hover:text-[#141413] hover:bg-[#EFE9DE] transition-colors relative cursor-pointer"
+              title={
+                isAr
+                  ? 'إشعارات المنصة (اضغط 6 مرات لفتح بوابة yadmin)'
+                  : 'Platform Notifications (Click 6 times for yadmin access)'
+              }
+            >
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#5DB8A6]"></span>
+            </button>
+
+            {/* Language Switcher (Desktop and Tablet) */}
+            <button
+              onClick={toggleLanguage}
+              className="hidden sm:flex px-2.5 py-1.5 text-xs font-medium rounded-xl border border-[#E6DFD8] text-[#3D3D3A] hover:bg-[#EFE9DE] transition-colors items-center gap-1.5 cursor-pointer"
+              title={lang === 'ar' ? 'Switch to English' : 'التحويل إلى العربية'}
+            >
+              <Globe className="w-3.5 h-3.5 text-[#6C6A64]" />
+              <span className="whitespace-nowrap font-semibold">
+                {lang === 'ar' ? 'English' : 'العربية'}
               </span>
-            </div>
-          </button>
-        </div>
+            </button>
 
-        {/* Zone 2: Nav Links (Clean single-line prose) */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-[#6C6A64]">
-          <button
-            onClick={() => setCurrentView('home')}
-            className={`whitespace-nowrap shrink-0 hover:text-[#141413] transition-colors ${
-              currentView === 'home' ? 'text-[#141413] font-semibold' : ''
-            }`}
-          >
-            {t.nav.home}
-          </button>
-          <button
-            onClick={() => setCurrentView('how-it-works')}
-            className={`whitespace-nowrap shrink-0 hover:text-[#141413] transition-colors ${
-              currentView === 'how-it-works' ? 'text-[#141413] font-semibold' : ''
-            }`}
-          >
-            {t.nav.howItWorks}
-          </button>
-          <button
-            onClick={() => setCurrentView('features')}
-            className={`whitespace-nowrap shrink-0 hover:text-[#141413] transition-colors ${
-              currentView === 'features' ? 'text-[#141413] font-semibold' : ''
-            }`}
-          >
-            {t.nav.features}
-          </button>
-          <button
-            onClick={() => setCurrentView('pricing')}
-            className={`whitespace-nowrap shrink-0 hover:text-[#141413] transition-colors ${
-              currentView === 'pricing' ? 'text-[#141413] font-semibold' : ''
-            }`}
-          >
-            {t.nav.pricing}
-          </button>
-          <button
-            onClick={() => setCurrentView('faq')}
-            className={`whitespace-nowrap shrink-0 hover:text-[#141413] transition-colors ${
-              currentView === 'faq' ? 'text-[#141413] font-semibold' : ''
-            }`}
-          >
-            {t.nav.faq}
-          </button>
-        </nav>
-
-        {/* Zone 3: Actions (Language Switcher + Device View Switcher + User Profile / CTA) */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Device Mode Switcher (Mobile Web App / Desktop) */}
-          <button
-            onClick={toggleDeviceMode}
-            className={`px-2.5 py-1.5 text-xs font-semibold rounded-md border transition-all flex items-center gap-1.5 cursor-pointer ${
-              deviceMode === 'desktop'
-                ? 'bg-[#181715] text-[#FAF9F5] border-[#181715] shadow-xs'
-                : 'bg-[#FAF0EA] text-[#CC785C] border-[#CC785C]/40 hover:bg-[#F5E6DC]'
-            }`}
-            title={deviceMode === 'mobile' ? t.mobileApp.switchToDesktop : t.mobileApp.switchToMobile}
-          >
-            {deviceMode === 'mobile' ? (
-              <>
-                <Smartphone className="w-3.5 h-3.5" />
-                <span className="whitespace-nowrap hidden sm:inline">{t.mobileApp.mobileMode}</span>
-              </>
-            ) : (
-              <>
-                <Monitor className="w-3.5 h-3.5" />
-                <span className="whitespace-nowrap hidden sm:inline">{t.mobileApp.desktopMode}</span>
-              </>
+            {/* Admin Badge (if logged in as admin) */}
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => setCurrentView(currentView === 'admin' ? 'dashboard' : 'admin')}
+                className="px-2.5 sm:px-3 py-1.5 text-xs font-bold rounded-xl bg-[#181715] hover:bg-[#252320] text-[#FAF9F5] border border-[#35322D] transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-xs"
+              >
+                <Shield className="w-3.5 h-3.5 text-[#E8A55A]" />
+                <span className="hidden sm:inline">yadmin</span>
+              </button>
             )}
-          </button>
 
-          {/* Language Switcher */}
-          <button
-            onClick={toggleLanguage}
-            className="px-2.5 py-1.5 text-xs font-medium rounded-md border border-[#E6DFD8] text-[#3D3D3A] hover:bg-[#EFE9DE] transition-colors flex items-center gap-1.5 cursor-pointer"
-            title={lang === 'ar' ? 'Switch to English' : 'التحويل إلى العربية'}
-          >
-            <Globe className="w-3.5 h-3.5 text-[#6C6A64]" />
-            <span className="whitespace-nowrap font-semibold">{lang === 'ar' ? 'English' : 'العربية'}</span>
-          </button>
-
-          {user ? (
-            <div className="flex items-center gap-2">
+            {/* Dashboard Quick Button (Desktop only) */}
+            {user && (
               <button
                 onClick={() => setCurrentView(currentView === 'dashboard' ? 'home' : 'dashboard')}
-                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#EFE9DE] hover:bg-[#E8E0D2] text-[#141413] border border-[#E6DFD8] transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+                className="hidden lg:flex px-3 py-1.5 text-xs font-semibold rounded-xl bg-[#EFE9DE] hover:bg-[#E8E0D2] text-[#141413] border border-[#E6DFD8] transition-colors items-center gap-1.5 whitespace-nowrap cursor-pointer"
               >
                 <LayoutDashboard className="w-3.5 h-3.5 text-[#CC785C]" />
                 <span>{t.nav.dashboard}</span>
               </button>
+            )}
 
-              {user.role === 'admin' && (
-                <button
-                  onClick={() => setCurrentView(currentView === 'admin' ? 'home' : 'admin')}
-                  className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#181715] hover:bg-[#252320] text-[#FAF9F5] transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
-                >
-                  <Shield className="w-3.5 h-3.5 text-[#E8A55A]" />
-                  <span className="hidden sm:inline">{t.nav.admin}</span>
-                </button>
-              )}
-
-              <button
-                onClick={logout}
-                className="px-2.5 py-1.5 text-xs text-[#6C6A64] hover:text-[#C64545] transition-colors whitespace-nowrap cursor-pointer"
-                title={t.nav.logout}
-              >
-                {t.nav.logout}
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
+            {/* Get Started button (Desktop only if guest) */}
+            {!user && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setCurrentView('auth')}
-                className="px-3 py-1.5 text-xs font-medium text-[#3D3D3A] hover:text-[#141413] transition-colors whitespace-nowrap cursor-pointer"
-              >
-                {t.nav.login}
-              </button>
-              <button
-                onClick={() => setCurrentView('auth')}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#CC785C] hover:bg-[#A9583E] text-white shadow-sm transition-colors whitespace-nowrap cursor-pointer flex items-center gap-1.5"
+                className="hidden sm:flex px-3.5 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-[#CC785C] to-[#A9583E] hover:from-[#A9583E] hover:to-[#924732] text-white shadow-sm transition-all whitespace-nowrap cursor-pointer items-center gap-1 btn-shimmer"
               >
                 <span>{t.nav.getStarted}</span>
-              </button>
-            </div>
-          )}
+              </motion.button>
+            )}
+
+            {/* دائرة بروفايلي (Profile Circle Avatar) */}
+            <motion.button
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={() => {
+                // On mobile: open mobile sidebar. On desktop: open dashboard profile tab or sidebar
+                if (window.innerWidth < 768) {
+                  setMobileSidebarOpen(true);
+                } else if (user) {
+                  setCurrentView('dashboard');
+                  setDashboardTab('profile');
+                } else {
+                  setCurrentView('auth');
+                }
+              }}
+              className="relative p-0.5 rounded-full border-2 border-[#CC785C]/40 hover:border-[#CC785C] transition-all cursor-pointer flex items-center justify-center shrink-0 focus:outline-none focus:ring-2 focus:ring-[#CC785C]/40 group shadow-2xs hover:shadow-[0_0_12px_rgba(204,120,92,0.35)]"
+              title={
+                user
+                  ? isAr
+                    ? `بروفايلي: ${user.name}`
+                    : `My Profile: ${user.name}`
+                  : isAr
+                  ? 'بروفايلي / تسجيل الدخول'
+                  : 'My Profile / Sign In'
+              }
+              aria-label="Profile Avatar"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#EFE9DE] flex items-center justify-center overflow-hidden">
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                  />
+                ) : user ? (
+                  <span className="text-xs font-black text-[#CC785C]">{userInitials}</span>
+                ) : (
+                  <UserIcon className="w-4 h-4 text-[#6C6A64]" />
+                )}
+              </div>
+              {user && (
+                <span className="absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full bg-[#5DB8A6] border-2 border-white animate-pulse" />
+              )}
+            </motion.button>
+
+            {/* Mobile Hamburger Menu Toggle (Opens Side Drawer) */}
+            <button
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl text-[#6C6A64] hover:text-[#141413] hover:bg-[#EFE9DE] transition-colors cursor-pointer border border-[#E6DFD8]"
+              aria-label="Open mobile navigation menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Modern Slide-over Mobile Sidebar Drawer */}
+      <MobileSidebar
+        isOpen={mobileSidebarOpen}
+        onClose={() => setMobileSidebarOpen(false)}
+      />
+    </>
   );
 };

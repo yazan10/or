@@ -28,8 +28,11 @@ import {
   ChevronRight,
   TrendingUp,
   ShieldCheck,
+  LogOut,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { AnalyticsDesktopPrompt } from './AnalyticsDesktopPrompt';
+import { YaAiChatView } from './YaAiChatView';
 
 export const UserDashboard: React.FC = () => {
   const {
@@ -49,6 +52,7 @@ export const UserDashboard: React.FC = () => {
     showToast,
     refreshBalances,
     setCurrentView,
+    logout,
   } = useApp();
 
   const isAr = lang === 'ar';
@@ -392,12 +396,12 @@ export const UserDashboard: React.FC = () => {
 
       {/* Main Workspace Layout with Sidebar Navigation Tabs */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-        {/* Navigation Sidebar */}
-        <aside className="bg-[#FAF9F5] border border-[#E6DFD8] rounded-2xl p-3 space-y-1">
+        {/* Navigation Sidebar: Horizontal scroll on mobile/tablet, vertical sidebar on desktop */}
+        <aside className="bg-[#FAF9F5] border border-[#E6DFD8] rounded-2xl p-2 sm:p-2.5 flex lg:flex-col overflow-x-auto lg:overflow-visible gap-1.5 lg:gap-1 shrink-0 w-full">
           <button
             onClick={() => setDashboardTab('overview')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'overview' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'overview' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <LayoutDashboard className="w-4 h-4 text-[#CC785C]" />
@@ -406,12 +410,12 @@ export const UserDashboard: React.FC = () => {
 
           <button
             onClick={() => setDashboardTab('accounts')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'accounts' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'accounts' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <Share2 className="w-4 h-4 text-[#5DB8A6]" />
-            <div className="flex items-center justify-between flex-1">
+            <div className="flex items-center gap-1.5">
               <span>{t.dashboard.connectedAccounts}</span>
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#EFE9DE] text-[#141413]">
                 {accounts.length}/10
@@ -421,8 +425,8 @@ export const UserDashboard: React.FC = () => {
 
           <button
             onClick={() => setDashboardTab('new-analysis')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'new-analysis' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'new-analysis' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <Sparkles className="w-4 h-4 text-[#E8A55A]" />
@@ -431,8 +435,8 @@ export const UserDashboard: React.FC = () => {
 
           <button
             onClick={() => setDashboardTab('report-details')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'report-details' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'report-details' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <FileText className="w-4 h-4 text-[#CC785C]" />
@@ -441,18 +445,36 @@ export const UserDashboard: React.FC = () => {
 
           <button
             onClick={() => setDashboardTab('calendar')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'calendar' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'calendar' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <Calendar className="w-4 h-4 text-[#5DB8A6]" />
             <span>{t.dashboard.contentCalendar}</span>
           </button>
 
+          {/* YA ai Strategic Chat Tab */}
+          <button
+            onClick={() => setDashboardTab('ya-ai')}
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition-all cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'ya-ai'
+                ? 'bg-[#181715] text-white shadow-xs'
+                : 'text-[#3D3D3A] hover:bg-[#EFE9DE] bg-[#FAF0EA]/60 border border-[#CC785C]/25'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#CC785C] animate-pulse" />
+              <span>{isAr ? 'شات الذكاء الاصطناعي' : 'AI Strategic Chat'}</span>
+            </div>
+            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-[#CC785C] text-white">
+              YA ai
+            </span>
+          </button>
+
           <button
             onClick={() => setDashboardTab('wallets')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'wallets' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'wallets' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <Wallet className="w-4 h-4 text-[#1877F2]" />
@@ -461,8 +483,8 @@ export const UserDashboard: React.FC = () => {
 
           <button
             onClick={() => setDashboardTab('profile')}
-            className={`w-full p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 transition-colors cursor-pointer text-left rtl:text-right ${
-              dashboardTab === 'profile' ? 'bg-[#181715] text-white' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
+            className={`p-2 sm:p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer text-left rtl:text-right whitespace-nowrap shrink-0 ${
+              dashboardTab === 'profile' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#3D3D3A] hover:bg-[#EFE9DE]'
             }`}
           >
             <UserIcon className="w-4 h-4 text-[#6C6A64]" />
@@ -472,6 +494,14 @@ export const UserDashboard: React.FC = () => {
 
         {/* Content Area */}
         <main className="lg:col-span-3 space-y-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={dashboardTab}
+              initial={{ opacity: 0, y: 12, filter: 'blur(2px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+            >
           {/* TAB 1: OVERVIEW */}
           {dashboardTab === 'overview' && (
             <div className="space-y-6">
@@ -1517,12 +1547,20 @@ export const UserDashboard: React.FC = () => {
                   />
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
                   <button
                     onClick={() => showToast(isAr ? 'تم حفظ التعديلات بنجاح!' : 'Profile saved successfully!', 'success')}
                     className="px-5 py-2 text-xs font-bold rounded-lg bg-[#CC785C] hover:bg-[#A9583E] text-white shadow-sm transition-colors cursor-pointer"
                   >
                     {isAr ? 'حفظ التعديلات' : 'Save Changes'}
+                  </button>
+
+                  <button
+                    onClick={logout}
+                    className="px-4 py-2 text-xs font-bold rounded-lg text-[#C64545] hover:bg-[#C64545]/10 border border-[#C64545]/30 transition-colors cursor-pointer flex items-center gap-1.5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>{t.nav.logout}</span>
                   </button>
                 </div>
               </div>
@@ -1545,6 +1583,11 @@ export const UserDashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* TAB 8: YA AI STRATEGIC CHAT */}
+          {dashboardTab === 'ya-ai' && <YaAiChatView />}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

@@ -100,6 +100,17 @@ const users: DBUser[] = [
     instagramPurchasesCount: 5,
     facebookPurchasesCount: 5,
   },
+  {
+    id: 'admin_yadmin',
+    name: 'yadmin',
+    email: 'yadmin@orvex.ai',
+    role: 'admin',
+    preferredLang: 'ar',
+    timezone: 'Asia/Riyadh',
+    createdAt: '2026-01-01T00:00:00Z',
+    instagramPurchasesCount: 99,
+    facebookPurchasesCount: 99,
+  },
 ];
 
 const wallets: Record<string, DBWallet> = {
@@ -116,6 +127,13 @@ const wallets: Record<string, DBWallet> = {
     facebookCredits: 99,
     instagramPurchasesCount: 10,
     facebookPurchasesCount: 10,
+  },
+  admin_yadmin: {
+    userId: 'admin_yadmin',
+    instagramCredits: 999,
+    facebookCredits: 999,
+    instagramPurchasesCount: 99,
+    facebookPurchasesCount: 99,
   },
 };
 
@@ -278,6 +296,16 @@ const reportDiscussions: Record<string, {
   chatMessages: { id: string; sender: 'user' | 'assistant'; text: string; timestamp: string }[];
   totalChatCharsUsed: number;
 }> = {};
+
+// In-Memory YA ai Conversations
+interface YaAiMessage {
+  id: string;
+  sender: 'user' | 'ya-ai';
+  text: string;
+  timestamp: string;
+  suggestedFollowUps?: string[];
+}
+const yaAiConversations: Record<string, YaAiMessage[]> = {};
 
 // Helper to get or create demo report
 function generateDemoReport(platform: 'instagram' | 'facebook', lang: 'ar' | 'en' = 'ar') {
@@ -1180,7 +1208,205 @@ Focus on clear tactics, script recommendations, or scheduling advice.`,
   });
 });
 
+// -------------------------------------------------------------
+// YA AI MODEL CHAT ENDPOINTS (Model: YA ai via Gemini 3.8 Flash)
+// -------------------------------------------------------------
+app.get('/api/ya-ai/messages', (req: Request, res: Response) => {
+  const userId = (req.query.userId as string) || 'user_1';
+  const lang = (req.query.lang as 'ar' | 'en') || 'ar';
+  const isAr = lang === 'ar';
+
+  if (!yaAiConversations[userId] || yaAiConversations[userId].length === 0) {
+    // Seed initial greeting from YA ai
+    yaAiConversations[userId] = [
+      {
+        id: `ya_init_${Date.now()}`,
+        sender: 'ya-ai',
+        text: isAr
+          ? `أهلاً بك! أنا **YA ai**، الموديل الاستراتيجي للذكاء الاصطناعي في ORVEX AI.\n\nأنا مدرب خصيصاً على خوارزميات Instagram و Facebook، هندسة الـ Hooks الخاطفة، زيادة معدل حفظ المشاهدات، وكتابة سيناريوهات الـ Reels والـ Carousels التي تحول المشاهدين إلى عملاء حقيقيين.\n\nكيف يمكنني مساعدتك اليوم في تنمية حسابك؟`
+          : `Hello! I am **YA ai**, the elite proprietary growth intelligence model of ORVEX AI.\n\nI am specialized in Instagram & Facebook algorithms, high-retention hook architecture, Reels scripting, Carousel slide pacing, and converting organic views into dedicated clients.\n\nHow can I help accelerate your marketing strategy today?`,
+        timestamp: new Date().toISOString(),
+        suggestedFollowUps: isAr
+          ? [
+              'ما هو أفضل وقت لنشر Reel هذا الأسبوع؟',
+              'أعطني 5 افتتاحيات (Hooks) تمنع المشاهد من التمرير في أول ثانيتين.',
+              'كيف أصمم منشور Carousel تعليمي يحقق أعلى نسبة حفظ ومشاركة؟',
+            ]
+          : [
+              'What is the optimal day and time to post a Reel this week?',
+              'Give me 5 scroll-stopping hooks for the first 2 seconds.',
+              'How to structure an educational Carousel for peak bookmark retention?',
+            ],
+      },
+    ];
+  }
+
+  res.json({ messages: yaAiConversations[userId] });
+});
+
+app.post('/api/ya-ai/chat', async (req: Request, res: Response) => {
+  const { userId = 'user_1', message, lang = 'ar', platformContext = 'all' } = req.body;
+  if (!message || typeof message !== 'string' || !message.trim()) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  const isAr = lang === 'ar';
+
+  if (!yaAiConversations[userId]) {
+    yaAiConversations[userId] = [];
+  }
+
+  // Record user message
+  const userMsg: YaAiMessage = {
+    id: `ya_user_${Date.now()}`,
+    sender: 'user',
+    text: message.trim(),
+    timestamp: new Date().toISOString(),
+  };
+  yaAiConversations[userId].push(userMsg);
+
+  // Prepare recent context for Gemini 3.8 Flash
+  const recentHistory = yaAiConversations[userId].slice(-6).map((m) => `${m.sender === 'user' ? 'User' : 'YA ai'}: ${m.text}`).join('\n\n');
+
+  let assistantText = '';
+  let followUps: string[] = [];
+
+  try {
+    if (process.env.GEMINI_API_KEY) {
+      const systemPrompt = `You are "YA ai" (موديل الذكاء الاصطناعي الفائق YA ai), the elite proprietary social media growth strategist developed exclusively for ORVEX AI.
+You possess deep expertise in Instagram Business/Creator algorithms and Facebook Pages:
+- Viral hook mechanics (0-3s visual & audio patterns).
+- Video watch time retention and completion pacing.
+- Carousel slide psychology (high bookmarking and sharing utility).
+- Conversion architecture (turning passive impressions into customers & direct inquiries).
+- Objective, realistic strategy with NO false promises or spam tactics.
+
+User question context: Platform [${platformContext}]. Language of conversation: [${isAr ? 'Arabic' : 'English'}].
+Conversation history:
+${recentHistory}
+
+Reply in rich, structured, highly motivating and actionable ${isAr ? 'Arabic' : 'English'}.
+Use clear bold headings, bullet lists, specific hook examples in quotation marks, and practical steps.
+Do not use generic fluff. Provide razor-sharp, inspiring marketing advice.`;
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: systemPrompt,
+      });
+
+      assistantText = (response.text || '').trim();
+    }
+  } catch (err) {
+    console.error('YA ai Gemini error:', err);
+  }
+
+  if (!assistantText) {
+    assistantText = isAr
+      ? `استراتيجية ممتازة! لتنفيذ هذا الهدف بأعلى كفاءة:
+
+1. **الافتتاحية (0-3 ثوانٍ)**: استخدم صدمة بصرية مع جملة واضحة: *"٩٠٪ من صناع المحتوى يقعون في هذا الفخ دون علمهم"*.
+2. **الصلب (3-20 ثانية)**: قدم القيمة العملية في 3 نقاط محددة وسريعة مع انتقالات سلسة.
+3. **الدعوة للإجراء (CTA)**: وجه المشاهد لخطوة واحدة واضحة: *"احفظ هذا الفيديو لتطبقه في منشورك القادم"*.
+
+هل ترغب في صياغة نص متكامل لهذا المنشور مخصص لجمهورك المحدد؟`
+      : `Outstanding strategic objective! Here is the optimal execution roadmap:
+
+1. **Visual Hook (0-3 seconds)**: Lead with immediate cognitive tension: *"90% of accounts get this backwards—here is the fix."*
+2. **The Core Substance (3-20s)**: Deliver the actionable solution in 3 rapid, concrete bullets without preamble.
+3. **Frictionless CTA**: Single command: *"Bookmark this blueprint to deploy on your next publication."*
+
+Would you like me to write a turnkey, word-for-word script outline for this concept?`;
+  }
+
+  followUps = isAr
+    ? [
+        'اكتب لي السيناريو الكامل مع التوقيت بالثواني.',
+        'كيف أزيد من نسبة حفظ (Saves) هذا المنشور؟',
+        'ما هي الهاشتاقات المناسبة لزيادة الوصول العضوي؟',
+      ]
+    : [
+        'Write the full turnkey script with second-by-second pacing.',
+        'How can I maximize bookmark and share rates for this post?',
+        'Which specific hashtag cluster will boost organic Explorer reach?',
+      ];
+
+  const aiMsg: YaAiMessage = {
+    id: `ya_ai_${Date.now()}`,
+    sender: 'ya-ai',
+    text: assistantText,
+    timestamp: new Date().toISOString(),
+    suggestedFollowUps: followUps,
+  };
+
+  yaAiConversations[userId].push(aiMsg);
+
+  res.json({
+    reply: assistantText,
+    message: aiMsg,
+    messages: yaAiConversations[userId],
+  });
+});
+
+app.post('/api/ya-ai/clear', (req: Request, res: Response) => {
+  const { userId = 'user_1' } = req.body;
+  delete yaAiConversations[userId];
+  res.json({ success: true });
+});
+
 // Admin API
+// Admin Secret Portal Auth (username: yadmin, password: maya@#5Y)
+app.post('/api/admin/auth', (req: Request, res: Response) => {
+  const { username, password } = req.body;
+  const rawUser = (username || '').trim().toLowerCase();
+  const rawPass = (password || '').trim();
+
+  const isUsernameValid = rawUser === 'yadmin' || rawUser === 'yadmin@orvex.ai';
+  const isPasswordValid = rawPass === 'maya@#5Y';
+
+  if (!isUsernameValid || !isPasswordValid) {
+    return res.status(401).json({
+      error: 'بيانات الإدارة غير صحيحة. يرجى التأكد من اسم المسؤول (yadmin) وكلمة المرور.',
+    });
+  }
+
+  let adminUser = users.find((u) => u.id === 'admin_yadmin');
+  if (!adminUser) {
+    adminUser = {
+      id: 'admin_yadmin',
+      name: 'yadmin',
+      email: 'yadmin@orvex.ai',
+      role: 'admin',
+      preferredLang: 'ar',
+      timezone: 'Asia/Riyadh',
+      createdAt: '2026-01-01T00:00:00Z',
+      instagramPurchasesCount: 99,
+      facebookPurchasesCount: 99,
+    };
+    users.push(adminUser);
+    wallets['admin_yadmin'] = {
+      userId: 'admin_yadmin',
+      instagramCredits: 999,
+      facebookCredits: 999,
+      instagramPurchasesCount: 99,
+      facebookPurchasesCount: 99,
+    };
+  }
+
+  auditLogs.push({
+    id: `audit_${Date.now()}`,
+    adminEmail: 'yadmin@orvex.ai',
+    action: 'ADMIN_SECRET_PORTAL_LOGIN',
+    details: 'Admin yadmin successfully logged in via 6-click portal access',
+    timestamp: new Date().toISOString(),
+  });
+
+  res.json({
+    success: true,
+    user: adminUser,
+    wallet: wallets['admin_yadmin'],
+  });
+});
+
 app.get('/api/admin/stats', (req: Request, res: Response) => {
   const totalUsers = users.length;
   const totalAnalyses = savedReports.length + 42; // baseline historical

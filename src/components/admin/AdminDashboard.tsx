@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const { lang, t, showToast, setCurrentView } = useApp();
+  const { user, lang, t, showToast, setCurrentView } = useApp();
   const isAr = lang === 'ar';
   const ArrowIcon = isAr ? ArrowLeft : ArrowRight;
 
@@ -156,18 +156,23 @@ export const AdminDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-[#181715] text-[#FAF9F5] border border-[#35322D] rounded-2xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xl">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#CC785C] flex items-center justify-center text-white font-bold">
+          <div className="w-10 h-10 rounded-xl bg-[#CC785C] flex items-center justify-center text-white font-bold shrink-0">
             <Shield className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-black tracking-tight">{t.admin.title}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight">{t.admin.title}</h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-[#E8A55A]/20 border border-[#E8A55A]/40 text-[#E8A55A] text-[11px] font-bold">
+                {user?.name || 'yadmin'}
+              </span>
+            </div>
             <p className="text-xs text-[#A09C94]">{t.admin.subtitle}</p>
           </div>
         </div>
 
         <button
           onClick={() => setCurrentView('dashboard')}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#252320] hover:bg-[#35322D] text-[#FAF9F5] border border-[#35322D] transition-colors cursor-pointer"
+          className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#252320] hover:bg-[#35322D] text-[#FAF9F5] border border-[#35322D] transition-colors cursor-pointer shrink-0"
         >
           {isAr ? 'العودة إلى لوحة المستخدم' : 'Switch to Creator View'}
         </button>
@@ -200,44 +205,44 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Admin Tab Switcher */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-[#E6DFD8] pb-3">
+      {/* Admin Tab Switcher - Responsive horizontal scroll on mobile */}
+      <div className="flex items-center gap-2 border-b border-[#E6DFD8] pb-3 overflow-x-auto no-scrollbar whitespace-nowrap shrink-0">
         <button
           onClick={() => setActiveTab('stats')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'stats' ? 'bg-[#181715] text-white' : 'text-[#6C6A64] hover:text-[#141413]'
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === 'stats' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#6C6A64] hover:text-[#141413]'
           }`}
         >
           {t.admin.tabOverview}
         </button>
         <button
           onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'users' ? 'bg-[#181715] text-white' : 'text-[#6C6A64] hover:text-[#141413]'
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === 'users' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#6C6A64] hover:text-[#141413]'
           }`}
         >
           {t.admin.tabUsers}
         </button>
         <button
           onClick={() => setActiveTab('pricing')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'pricing' ? 'bg-[#181715] text-white' : 'text-[#6C6A64] hover:text-[#141413]'
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === 'pricing' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#6C6A64] hover:text-[#141413]'
           }`}
         >
           {t.admin.tabPricing}
         </button>
         <button
           onClick={() => setActiveTab('prompts')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'prompts' ? 'bg-[#181715] text-white' : 'text-[#6C6A64] hover:text-[#141413]'
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === 'prompts' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#6C6A64] hover:text-[#141413]'
           }`}
         >
           {t.admin.tabPrompts}
         </button>
         <button
           onClick={() => setActiveTab('audit')}
-          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer ${
-            activeTab === 'audit' ? 'bg-[#181715] text-white' : 'text-[#6C6A64] hover:text-[#141413]'
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 ${
+            activeTab === 'audit' ? 'bg-[#181715] text-white shadow-xs' : 'text-[#6C6A64] hover:text-[#141413]'
           }`}
         >
           {t.admin.tabAudit}
