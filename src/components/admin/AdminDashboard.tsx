@@ -15,6 +15,10 @@ import {
   CheckCircle2,
   ArrowRight,
   ArrowLeft,
+  CreditCard,
+  Lock,
+  RefreshCw,
+  ExternalLink,
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -22,7 +26,7 @@ export const AdminDashboard: React.FC = () => {
   const isAr = lang === 'ar';
   const ArrowIcon = isAr ? ArrowLeft : ArrowRight;
 
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'pricing' | 'prompts' | 'audit' | 'settings'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'pricing' | 'prompts' | 'audit' | 'payments' | 'settings'>('stats');
   const [stats, setStats] = useState<any>({
     totalUsers: 142,
     totalAnalyses: 388,
@@ -33,6 +37,24 @@ export const AdminDashboard: React.FC = () => {
   const [pricingSettings, setPricingSettings] = useState<any>(null);
   const [promptsList, setPromptsList] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
+
+  // PayPal & Payments Admin State
+  const [paypalConfig, setPaypalConfig] = useState<{
+    clientId: string;
+    clientSecret: string;
+    environment: 'sandbox' | 'live';
+    configured: boolean;
+    currency: string;
+  }>({
+    clientId: '',
+    clientSecret: '',
+    environment: 'sandbox',
+    configured: false,
+    currency: 'USD',
+  });
+  const [paypalTransactions, setPaypalTransactions] = useState<any[]>([]);
+  const [savingPaypal, setSavingPaypal] = useState(false);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   // Adjust credit modal state
   const [adjustTargetUser, setAdjustTargetUser] = useState<any>(null);
@@ -50,12 +72,14 @@ export const AdminDashboard: React.FC = () => {
 
   const fetchAdminData = async () => {
     try {
-      const [resStats, resUsers, resPricing, resPrompts, resAudit] = await Promise.all([
+      const [resStats, resUsers, resPricing, resPrompts, resAudit, resPaypal, resTx] = await Promise.all([
         fetch('/api/admin/stats'),
         fetch('/api/admin/users'),
         fetch('/api/admin/pricing'),
         fetch('/api/admin/prompts'),
         fetch('/api/admin/audit-logs'),
+        fetch('/api/admin/paypal-config'),
+        fetch('/api/paypal/transactions'),
       ]);
 
       if (resStats.ok) setStats(await resStats.json());
@@ -75,8 +99,66 @@ export const AdminDashboard: React.FC = () => {
         const aData = await resAudit.json();
         setAuditLogs(aData.auditLogs || []);
       }
+      if (resPaypal.ok) {
+        const ppData = await resPaypal.json();
+        if (ppData.paypalConfig) {
+          setPaypalConfig({
+            clientId: ppData.paypalConfig.clientId || '',
+            clientSecret: ppData.paypalConfig.clientSecret || '',
+            environment: ppData.paypalConfig.environment || 'sandbox',
+            configured: !!ppData.paypalConfig.configured,
+            currency: ppData.paypalConfig.currency || 'USD',
+          });
+        }
+      }
+      if (resTx.ok) {
+        const txData = await resTx.json();
+        setPaypalTransactions(txData.transactions || []);
+      }
     } catch (e) {
       console.warn('Error fetching admin data:', e);
+    }
+  };
+
+  const fetchTransactionsOnly = async () => {
+    setLoadingTransactions(true);
+    try {
+      const res = await fetch('/api/paypal/transactions');
+      if (res.ok) {
+        const data = await res.json();
+        setPaypalTransactions(data.transactions || []);
+        showToast(isAr ? 'تم تحديث سجل المعاملات' : 'Transactions updated', 'success');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  const handleSavePaypalConfig = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingPaypal(true);
+    try {
+      const res = await fetch('/api/admin/paypal-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paypalConfig),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(isAr ? 'تم حفظ إعدادات PayPal بنجاح!' : 'PayPal settings saved successfully!', 'success');
+        setPaypalConfig((prev) => ({
+          ...prev,
+          configured: !!data.paypalConfig?.configured,
+        }));
+      } else {
+        showToast(data.error || 'Failed to save PayPal settings', 'error');
+      }
+    } catch (e) {
+      showToast('Error saving PayPal configuration', 'error');
+    } finally {
+      setSavingPaypal(false);
     }
   };
 
@@ -246,6 +328,22 @@ export const AdminDashboard: React.FC = () => {
           }`}
         >
           {t.admin.tabAudit}
+        </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`px-4 py-2 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
+            activeTab === 'payments' ? 'bg-[#003087] text-white shadow-xs' : 'text-[#6C6A64] hover:text-[#141413]'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>{isAr ? 'بوابة الدفع PayPal والبطاقات' : 'PayPal & Card Gateway'}</span>
+          {paypalTransactions.length > 0 && (
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === 'payments' ? 'bg-white/20 text-white' : 'bg-[#EFE9DE] text-[#141413]'
+            }`}>
+              {paypalTransactions.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -519,6 +617,244 @@ export const AdminDashboard: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: PAYPAL & CARD PAYMENTS GATEWAY */}
+      {activeTab === 'payments' && (
+        <div className="space-y-6">
+          {/* Quick Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-white border border-[#E6DFD8] space-y-1">
+              <span className="text-[11px] text-[#6C6A64]">
+                {isAr ? 'حالة بوابة PayPal' : 'PayPal Gateway Status'}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${paypalConfig.configured ? 'bg-[#5DB8A6]' : 'bg-[#E8A55A]'}`} />
+                <p className="text-base font-bold text-[#141413] uppercase tracking-wide">
+                  {paypalConfig.environment} {paypalConfig.configured ? (isAr ? '(مربوط)' : '(Connected)') : (isAr ? '(محاكي Sandbox)' : '(Sandbox Mode)')}
+                </p>
+              </div>
+              <p className="text-[11px] text-[#6C6A64]">
+                {isAr ? 'يدعم Visa, Mastercard, AMEX, وباي بال' : 'Supports Visa, Mastercard, AMEX, PayPal'}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white border border-[#E6DFD8] space-y-1">
+              <span className="text-[11px] text-[#6C6A64]">
+                {isAr ? 'إجمالي التحصيلات عبر البوابة' : 'Total Processed Volume'}
+              </span>
+              <p className="text-xl font-black text-[#003087] tabular-nums">
+                ${paypalTransactions.reduce((acc, t) => acc + (t.amountUSD || 0), 0).toFixed(2)} USD
+              </p>
+              <p className="text-[11px] text-[#6C6A64] tabular-nums">
+                ≈ {paypalTransactions.reduce((acc, t) => acc + (t.amountILS || 0), 0).toLocaleString()} ILS
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white border border-[#E6DFD8] space-y-1">
+              <span className="text-[11px] text-[#6C6A64]">
+                {isAr ? 'عدد العمليات الناجحة' : 'Successful Transactions'}
+              </span>
+              <div className="flex items-center justify-between">
+                <p className="text-xl font-black text-[#141413] tabular-nums">
+                  {paypalTransactions.length}
+                </p>
+                <button
+                  onClick={fetchTransactionsOnly}
+                  disabled={loadingTransactions}
+                  className="p-1.5 rounded-lg border border-[#E6DFD8] hover:bg-[#FAF9F5] text-[#6C6A64] hover:text-[#141413] transition-colors cursor-pointer"
+                  title={isAr ? 'تحديث السجل' : 'Refresh ledger'}
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingTransactions ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <p className="text-[11px] text-[#5DB8A6]">
+                {isAr ? '100% تم التحقق منها وشحن المحفظة' : '100% verified & credited'}
+              </p>
+            </div>
+          </div>
+
+          {/* PayPal API Credentials Settings Form */}
+          <form onSubmit={handleSavePaypalConfig} className="bg-[#FAF9F5] border border-[#E6DFD8] rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E6DFD8] pb-4">
+              <div>
+                <h3 className="text-base font-bold text-[#141413] flex items-center gap-2">
+                  <Lock className="w-4 h-4 text-[#003087]" />
+                  <span>{isAr ? 'إعدادات مفاتيح PayPal REST API' : 'PayPal REST API Credentials'}</span>
+                </h3>
+                <p className="text-xs text-[#6C6A64]">
+                  {isAr 
+                    ? 'يمكنك تبديل البيئة بين Sandbox للاختبار و Live للإنتاج، وتحديث الـ Client ID والـ Secret'
+                    : 'Switch between Sandbox and Live, and update your PayPal Client ID and Secret at runtime'}
+                </p>
+              </div>
+              <button
+                type="submit"
+                disabled={savingPaypal}
+                className="px-5 py-2 text-xs font-bold rounded-lg bg-[#003087] hover:bg-[#002266] text-white shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {savingPaypal ? (isAr ? 'جاري الحفظ...' : 'Saving...') : (isAr ? 'حفظ إعدادات باي بال' : 'Save PayPal Config')}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#3D3D3A] mb-1">
+                  {isAr ? 'بيئة التشغيل (Environment)' : 'Environment'}
+                </label>
+                <select
+                  value={paypalConfig.environment}
+                  onChange={(e) => setPaypalConfig({ ...paypalConfig, environment: e.target.value as 'sandbox' | 'live' })}
+                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#003087]"
+                >
+                  <option value="sandbox">Sandbox (اختبار وتطوير)</option>
+                  <option value="live">Live (إنتاج حقيقي)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#3D3D3A] mb-1">
+                  PayPal Client ID
+                </label>
+                <input
+                  type="text"
+                  value={paypalConfig.clientId}
+                  onChange={(e) => setPaypalConfig({ ...paypalConfig, clientId: e.target.value })}
+                  placeholder="e.g. AeA1... (PayPal App Client ID)"
+                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD8] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[#003087]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#3D3D3A] mb-1">
+                  PayPal Secret Key
+                </label>
+                <input
+                  type="password"
+                  value={paypalConfig.clientSecret}
+                  onChange={(e) => setPaypalConfig({ ...paypalConfig, clientSecret: e.target.value })}
+                  placeholder="••••••••••••••••••••••••"
+                  className="w-full px-3 py-2 text-xs bg-white border border-[#E6DFD8] rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-[#003087]"
+                />
+              </div>
+            </div>
+
+            <div className="p-3 bg-[#EFE9DE]/50 border border-[#E6DFD8] rounded-xl flex items-center justify-between text-[11px] text-[#6C6A64]">
+              <div>
+                <span className="font-semibold text-[#141413]">{isAr ? 'رابط الويب هوك الخاص بك: ' : 'Your PayPal Webhook URL: '}</span>
+                <code className="font-mono bg-white px-2 py-0.5 rounded border border-[#E6DFD8] text-[#141413]">
+                  {window.location.origin}/api/paypal/webhook
+                </code>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/api/paypal/webhook`);
+                  showToast(isAr ? 'تم نسخ رابط Webhook' : 'Webhook URL copied', 'success');
+                }}
+                className="text-[#CC785C] hover:underline font-bold cursor-pointer"
+              >
+                {isAr ? 'نسخ' : 'Copy'}
+              </button>
+            </div>
+          </form>
+
+          {/* Transactions Ledger Table */}
+          <div className="bg-[#FAF9F5] border border-[#E6DFD8] rounded-2xl p-6 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[#141413] flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-[#CC785C]" />
+                  <span>{isAr ? 'سجل العمليات والتحقق المالي المباشر' : 'Live Verified Transactions Ledger'}</span>
+                </h3>
+                <p className="text-xs text-[#6C6A64]">
+                  {isAr ? 'بيانات دقيقة لكل عملية دفع بـ Visa/Mastercard أو PayPal مع رقم الفاتورة وحالة الرصيد' : 'Exact audit records including invoice ID, charged amounts, and balance updates'}
+                </p>
+              </div>
+              <button
+                onClick={fetchTransactionsOnly}
+                disabled={loadingTransactions}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white border border-[#E6DFD8] hover:bg-[#EFE9DE] transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loadingTransactions ? 'animate-spin' : ''}`} />
+                <span>{isAr ? 'تحديث' : 'Refresh'}</span>
+              </button>
+            </div>
+
+            {paypalTransactions.length === 0 ? (
+              <div className="py-12 text-center text-xs text-[#6C6A64] bg-white rounded-xl border border-[#E6DFD8]">
+                {isAr ? 'لا توجد عمليات دفع مسجلة حتى الآن' : 'No transactions recorded yet'}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-left rtl:text-right border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#E6DFD8] text-[#6C6A64]">
+                      <th className="py-2.5 font-semibold">{isAr ? 'رقم الفاتورة' : 'Invoice'}</th>
+                      <th className="py-2.5 font-semibold">{isAr ? 'العميل' : 'Customer'}</th>
+                      <th className="py-2.5 font-semibold">{isAr ? 'طريقة الدفع' : 'Method'}</th>
+                      <th className="py-2.5 font-semibold">{isAr ? 'المبلغ المستلم' : 'Charged'}</th>
+                      <th className="py-2.5 font-semibold">{isAr ? 'المحفظة / الرصيد' : 'Wallet / Credits'}</th>
+                      <th className="py-2.5 font-semibold">{isAr ? 'الحالة' : 'Status'}</th>
+                      <th className="py-2.5 font-semibold">{isAr ? 'الوقت' : 'Date'}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E6DFD8]">
+                    {paypalTransactions.map((tx) => (
+                      <tr key={tx.id} className="hover:bg-white/60 transition-colors">
+                        <td className="py-3 font-mono font-bold text-[#141413]">
+                          {tx.invoiceNumber || tx.id}
+                        </td>
+                        <td className="py-3">
+                          <p className="font-semibold text-[#141413]">{tx.payerName || 'User'}</p>
+                          <p className="text-[11px] text-[#6C6A64]">{tx.payerEmail}</p>
+                        </td>
+                        <td className="py-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#FAF9F5] border border-[#E6DFD8] text-[#141413]">
+                            {tx.paymentMethod === 'card' ? (
+                              <>
+                                <CreditCard className="w-3 h-3 text-[#CC785C]" />
+                                <span>{tx.cardBrand ? tx.cardBrand.toUpperCase() : 'Card'} {tx.cardLast4 ? `••${tx.cardLast4}` : ''}</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-[#003087] font-bold">PP</span>
+                                <span>PayPal Wallet</span>
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td className="py-3 tabular-nums font-bold text-[#141413]">
+                          <span className="text-[#003087]">${tx.amountUSD?.toFixed(2)} USD</span>
+                          <span className="text-[10px] text-[#6C6A64] block">({tx.amountILS} ILS)</span>
+                        </td>
+                        <td className="py-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            tx.platform === 'instagram' ? 'bg-[#CC785C]/10 text-[#CC785C]' : 'bg-[#1877F2]/10 text-[#1877F2]'
+                          }`}>
+                            +{tx.creditsAdded} {tx.platform}
+                          </span>
+                          <span className="text-[10px] text-[#6C6A64] block tabular-nums">
+                            {isAr ? `الرصيد الجديد: ${tx.newBalance}` : `New bal: ${tx.newBalance}`}
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#5DB8A6]/10 text-[#5DB8A6]">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>{tx.status}</span>
+                          </span>
+                        </td>
+                        <td className="py-3 text-[11px] text-[#6C6A64] tabular-nums whitespace-nowrap">
+                          {new Date(tx.timestamp).toLocaleString(isAr ? 'ar-EG' : 'en-US')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -14,6 +14,7 @@ import { FaqPage } from './components/pages/FaqPage';
 import { ContactPage } from './components/pages/ContactPage';
 import { LegalPage } from './components/pages/LegalPage';
 import { LogoutPage } from './components/pages/LogoutPage';
+import { DepositPage } from './components/pages/DepositPage';
 import { MetaConnectModal } from './components/MetaConnectModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { AiCodeCursor } from './components/AiCodeCursor';
@@ -45,6 +46,7 @@ const AppContent: React.FC = () => {
             {currentView === 'how-it-works' && <HowItWorksPage />}
             {currentView === 'features' && <FeaturesPage />}
             {currentView === 'pricing' && <PricingPage />}
+            {currentView === 'deposit' && <DepositPage />}
             {currentView === 'faq' && <FaqPage />}
             {currentView === 'contact' && <ContactPage />}
             {currentView === 'auth' && <AuthPage />}

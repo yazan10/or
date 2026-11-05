@@ -301,6 +301,21 @@ export const MobileSidebar: React.FC<MobileSidebarProps> = ({ isOpen, onClose })
           </button>
 
           <button
+            onClick={() => navigateTo('deposit')}
+            className={`w-full p-3 rounded-xl text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
+              currentView === 'deposit'
+                ? 'bg-[#0070BA] text-[#FAF9F5]'
+                : 'text-[#0070BA] bg-[#0070BA]/10 hover:bg-[#0070BA]/20 border border-[#0070BA]/20'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Wallet className="w-4 h-4 text-[#0070BA]" />
+              <span>{isAr ? 'الإيداع وشراء الرصيد (PayPal)' : 'Deposit & Top Up (PayPal)'}</span>
+            </div>
+            <ArrowIcon className="w-4 h-4 text-[#0070BA]" />
+          </button>
+
+          <button
             onClick={() => navigateTo('faq')}
             className={`w-full p-3 rounded-xl text-xs font-bold flex items-center justify-between transition-colors cursor-pointer ${
               currentView === 'faq'

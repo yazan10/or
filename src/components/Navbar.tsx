@@ -8,6 +8,7 @@ import {
   Bell,
   Menu,
   User as UserIcon,
+  CreditCard,
 } from 'lucide-react';
 import { MobileSidebar } from './MobileSidebar';
 
@@ -67,6 +68,7 @@ export const Navbar: React.FC = () => {
     { id: 'how-it-works', label: t.nav.howItWorks },
     { id: 'features', label: t.nav.features },
     { id: 'pricing', label: t.nav.pricing },
+    { id: 'deposit', label: isAr ? 'الإيداع والشراء' : 'Deposit' },
     { id: 'faq', label: t.nav.faq },
   ];
 
@@ -152,6 +154,20 @@ export const Navbar: React.FC = () => {
                 <span className="hidden sm:inline">{isAr ? 'لوحة الإدارة' : 'Admin'}</span>
               </button>
             )}
+
+            {/* Deposit Quick Button (Always visible) */}
+            <button
+              onClick={() => setCurrentView('deposit')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer whitespace-nowrap ${
+                currentView === 'deposit'
+                  ? 'bg-[#0070BA] text-white border-[#0070BA] shadow-xs'
+                  : 'bg-[#0070BA]/10 hover:bg-[#0070BA]/20 text-[#0070BA] border-[#0070BA]/20'
+              }`}
+              title={isAr ? 'شحن الرصيد والإيداع عبر PayPal' : 'Deposit & Top Up via PayPal'}
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>{isAr ? 'شحن الرصيد' : 'Deposit'}</span>
+            </button>
 
             {/* Dashboard Quick Button (Desktop only) */}
             {user && (

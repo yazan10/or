@@ -28,6 +28,7 @@ import {
   ChevronRight,
   TrendingUp,
   ShieldCheck,
+  CreditCard,
   LogOut,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1320,11 +1321,18 @@ export const UserDashboard: React.FC = () => {
           {/* TAB 6: WALLETS & PAYPAL PURCHASES */}
           {dashboardTab === 'wallets' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-bold text-[#141413]">{t.walletPage.title}</h2>
                   <p className="text-xs text-[#6C6A64]">{t.walletPage.subtitle}</p>
                 </div>
+                <button
+                  onClick={() => setCurrentView('deposit')}
+                  className="px-3.5 py-2 text-xs font-bold rounded-xl bg-[#0070BA] hover:bg-[#003087] text-white flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs self-start sm:self-auto"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>{isAr ? 'الانتقال لمركز الإيداع المتكامل ←' : 'Deposit & Top Up Hub →'}</span>
+                </button>
               </div>
 
               {/* Dual Wallets Cards */}

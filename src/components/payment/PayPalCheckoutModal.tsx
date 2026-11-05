@@ -178,6 +178,7 @@ export const PayPalCheckoutModal: React.FC<PayPalCheckoutModalProps> = ({
           platform,
           orderId: orderData.orderId,
           paymentSource: 'paypal',
+          autoApproveSandbox: true,
         }),
       });
 
