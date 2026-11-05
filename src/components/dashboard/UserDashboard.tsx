@@ -33,6 +33,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { AnalyticsDesktopPrompt } from './AnalyticsDesktopPrompt';
 import { YaAiChatView } from './YaAiChatView';
+import { PayPalCheckoutModal } from '../payment/PayPalCheckoutModal';
 
 export const UserDashboard: React.FC = () => {
   const {
@@ -82,8 +83,6 @@ export const UserDashboard: React.FC = () => {
   // PayPal Checkout Modal State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutPlatform, setCheckoutPlatform] = useState<SocialPlatform>('instagram');
-  const [checkoutOrderData, setCheckoutOrderData] = useState<any>(null);
-  const [isCapturing, setIsCapturing] = useState(false);
 
   // Ledger state
   const [ledgerItems, setLedgerItems] = useState<any[]>([]);
@@ -239,60 +238,10 @@ export const UserDashboard: React.FC = () => {
     }
   };
 
-  // PayPal Checkout Simulation
-  const handleInitiateCheckout = async (targetPlatform: SocialPlatform) => {
-    if (!user) return;
+  // PayPal & Visa/Mastercard Checkout Modal
+  const handleInitiateCheckout = (targetPlatform: SocialPlatform) => {
     setCheckoutPlatform(targetPlatform);
-    try {
-      const res = await fetch('/api/wallet/purchase/create-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, platform: targetPlatform }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setCheckoutOrderData(data);
-        setIsCheckoutOpen(true);
-      } else {
-        showToast(data.error || 'Could not create order', 'error');
-      }
-    } catch (e: any) {
-      showToast(e.message || 'Network error', 'error');
-    }
-  };
-
-  const handleCapturePayPal = async () => {
-    if (!user || !checkoutOrderData) return;
-    setIsCapturing(true);
-    try {
-      const res = await fetch('/api/wallet/purchase/capture-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          platform: checkoutOrderData.platform,
-          orderId: checkoutOrderData.orderId,
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        await refreshBalances();
-        await fetchLedger();
-        setIsCheckoutOpen(false);
-        showToast(
-          isAr
-            ? `تم تأكيد الدفع وإضافة ${checkoutOrderData.trialsCount} محاولات إلى محفظتك بنجاح!`
-            : `Payment confirmed! Added ${checkoutOrderData.trialsCount} trials to your wallet.`,
-          'success'
-        );
-      } else {
-        showToast(data.error || 'Capture failed', 'error');
-      }
-    } catch (e: any) {
-      showToast(e.message || 'Capture error', 'error');
-    } finally {
-      setIsCapturing(false);
-    }
+    setIsCheckoutOpen(true);
   };
 
   // CSV Export for 30-Day Plan
@@ -1591,58 +1540,13 @@ export const UserDashboard: React.FC = () => {
         </main>
       </div>
 
-      {/* Interactive PayPal Checkout Modal */}
-      {isCheckoutOpen && checkoutOrderData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="bg-[#FAF9F5] border border-[#E6DFD8] rounded-2xl max-w-md w-full shadow-2xl p-6 sm:p-8 space-y-6 text-[#141413]">
-            <div className="flex items-center justify-between border-b border-[#E6DFD8] pb-3">
-              <div className="flex items-center gap-2">
-                <Wallet className="w-5 h-5 text-[#CC785C]" />
-                <h3 className="text-base font-bold">
-                  {isAr ? 'إتمام الشراء عبر PayPal Checkout' : 'PayPal Order Checkout'}
-                </h3>
-              </div>
-              <button onClick={() => setIsCheckoutOpen(false)} className="text-[#6C6A64] hover:text-[#141413]">
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 bg-[#EFE9DE] p-4 rounded-xl border border-[#E6DFD8] text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#6C6A64]">{isAr ? 'المنصة المستهدفة:' : 'Target Platform:'}</span>
-                <strong className="uppercase">{checkoutOrderData.platform}</strong>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#6C6A64]">{isAr ? 'عدد المحاولات:' : 'Trials Package:'}</span>
-                <strong className="tabular-nums">{checkoutOrderData.trialsCount} {t.dashboard.trialsUnit}</strong>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#6C6A64]">{isAr ? 'السعر المحلي بالشيقل:' : 'Price in ILS:'}</span>
-                <strong className="text-base font-black text-[#CC785C] tabular-nums">{checkoutOrderData.priceILS} ILS</strong>
-              </div>
-              <div className="h-px bg-[#E6DFD8]" />
-              <div className="flex items-center justify-between text-[#6C6A64]">
-                <span>{isAr ? 'مبلغ التحصيل بـ PayPal (USD):' : 'Estimated USD Charge:'}</span>
-                <strong className="text-[#141413] tabular-nums font-bold">${checkoutOrderData.amountUSD} USD</strong>
-              </div>
-            </div>
-
-            <p className="text-[11px] text-[#6C6A64] leading-relaxed">
-              {t.walletPage.dynamicUsdNotice}
-            </p>
-
-            <button
-              onClick={handleCapturePayPal}
-              disabled={isCapturing}
-              className="w-full py-3 text-xs font-bold rounded-xl bg-[#0070BA] hover:bg-[#003087] text-white shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {isCapturing
-                ? (isAr ? 'جاري تأكيد الدفع عبر PayPal...' : 'Capturing via PayPal...')
-                : (isAr ? `تأكيد الدفع الآن ($${checkoutOrderData.amountUSD} USD)` : `Authorize & Capture ($${checkoutOrderData.amountUSD} USD)`)}
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Interactive PayPal & Visa / MasterCard Checkout Modal */}
+      <PayPalCheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        platform={checkoutPlatform}
+        onSuccess={() => fetchLedger()}
+      />
     </div>
   );
 };

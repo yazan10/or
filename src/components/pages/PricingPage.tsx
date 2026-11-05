@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { SocialPlatform } from '../../types';
 import { Instagram, Facebook, CheckCircle2, ArrowRight, ArrowLeft, ShieldCheck, RefreshCw, Lock } from 'lucide-react';
+import { PayPalCheckoutModal } from '../payment/PayPalCheckoutModal';
 
 export const PricingPage: React.FC = () => {
   const { lang, t, setCurrentView, user, setDashboardTab } = useApp();
   const isAr = lang === 'ar';
   const ArrowIcon = isAr ? ArrowLeft : ArrowRight;
 
-  const handlePurchaseClick = () => {
+  const [checkoutPlatform, setCheckoutPlatform] = useState<SocialPlatform | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  const handlePurchase = (platform: SocialPlatform) => {
     if (user) {
-      setDashboardTab('wallets');
-      setCurrentView('dashboard');
+      setCheckoutPlatform(platform);
+      setIsCheckoutOpen(true);
     } else {
       setCurrentView('auth');
     }
@@ -97,7 +102,7 @@ export const PricingPage: React.FC = () => {
           </div>
 
           <button
-            onClick={handlePurchaseClick}
+            onClick={() => handlePurchase('instagram')}
             className="w-full py-3.5 text-xs font-bold rounded-xl bg-[#CC785C] hover:bg-[#A9583E] text-white shadow-sm transition-colors cursor-pointer"
           >
             {user ? (isAr ? 'شحن رصيد Instagram الآن' : 'Purchase Instagram Package') : t.pricing.buyNow}
@@ -168,7 +173,7 @@ export const PricingPage: React.FC = () => {
           </div>
 
           <button
-            onClick={handlePurchaseClick}
+            onClick={() => handlePurchase('facebook')}
             className="w-full py-3.5 text-xs font-bold rounded-xl bg-[#181715] hover:bg-[#252320] text-white shadow-sm transition-colors cursor-pointer"
           >
             {user ? (isAr ? 'شحن رصيد Facebook الآن' : 'Purchase Facebook Package') : t.pricing.buyNow}
@@ -179,8 +184,17 @@ export const PricingPage: React.FC = () => {
       {/* Trust & Policy Details */}
       <div className="max-w-3xl mx-auto p-6 rounded-2xl bg-[#FAF9F5] border border-[#E6DFD8] text-xs text-[#6C6A64] space-y-2 text-center leading-relaxed">
         <p className="font-semibold text-[#141413]">{t.pricing.paypalNotice}</p>
-        <p>{isAr ? 'جميع الأسعار المعروضة نهائية ومحسوبة بالشيقل المحلي، وتُحصّل عبر حسابك في PayPal بأمان تام وبدون أي رسوم خفية.' : 'All local prices are denominated in ILS and securely processed through PayPal Checkout.'}</p>
+        <p>{isAr ? 'جميع الأسعار المعروضة نهائية ومحسوبة بالشيقل المحلي، وتُحصّل عبر حسابك في PayPal وبطاقات Visa / MasterCard بأمان تام وبدون أي رسوم خفية.' : 'All local prices are denominated in ILS and securely processed through PayPal Checkout and Visa / MasterCard cards.'}</p>
       </div>
+
+      {/* Checkout Modal */}
+      {checkoutPlatform && (
+        <PayPalCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          platform={checkoutPlatform}
+        />
+      )}
     </div>
   );
 };
